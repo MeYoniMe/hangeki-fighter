@@ -156,11 +156,14 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             </button>
 
-            <!-- Curseur FUN -->
-            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-panel px-5 py-3 rounded-2xl shadow-2xl z-20 flex items-center gap-4 w-11/12 max-w-xs border border-white/20 backdrop-blur-md">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Sérieux</span>
-                <input type="range" id="fun-slider" min="0" max="150" value="100" class="w-full">
-                <span class="text-xs font-bold text-club uppercase tracking-wide">Fun 🔥</span>
+            <!-- Curseur FUN (Départ à 0, avec incitation) -->
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-panel px-5 py-3 rounded-2xl shadow-2xl z-20 flex flex-col items-center gap-2 w-11/12 max-w-xs border border-white/20 backdrop-blur-md">
+                <span class="text-xs font-bold text-club uppercase tracking-wide animate-pulse">Glisse pour le mode FUN 🕶️</span>
+                <div class="flex items-center gap-4 w-full">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Sérieux</span>
+                    <input type="range" id="fun-slider" min="0" max="150" value="0" class="w-full">
+                    <span class="text-xs font-bold text-club uppercase tracking-wide">Fun</span>
+                </div>
             </div>
         </div>
 
@@ -202,16 +205,16 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 
     <!-- Moteur IA et Logique Applicative -->
     <script type="module">
-        // Import statique robuste, compatible avec les navigateurs internes (QR Code / NFC)
-        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
-
         // ==========================================
         // ETAT DE L'APPLICATION
         // ==========================================
+        // AUCUN IMPORT STATIQUE ! On préserve 100% de la RAM de l'iPhone.
         let faceDetector = null;
-        let originalImage = null; // Image brute chargée
+        let originalImage = null; // Image brute allégée
         let currentFaces = [];
-        let funLevel = 100; // Niveau de FUN (0 = sans lunettes, >0 = taille des lunettes)
+        let funLevel = 0; // Départ à 0 (sans IA)
+        let isAIReady = false;
+        let isDetecting = false;
         
         let cadreImg = new Image();
         let lunettesImg = new Image();
@@ -225,52 +228,19 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         const canvas = document.getElementById('render-canvas');
         const ctx = canvas.getContext('2d');
         const loadingText = document.getElementById('loading-text');
+        const funSlider = document.getElementById('fun-slider');
 
-        // Initialisation de l'interface avec les variables de Yoni
+        // Initialisation de l'interface
         document.getElementById('display-ig').textContent = CONFIG.CLUB_IG;
-
-        // ==========================================
-        // 1. INITIALISATION DE L'IA (MediaPipe)
-        // ==========================================
-        let isAIReady = false;
-
-        async function initAI() {
-            if (isAIReady) return;
-            try {
-                // Charge le moteur WASM
-                const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-                );
-                
-                // Crée le détecteur de visages (modèle ultra léger)
-                faceDetector = await FaceDetector.createFromOptions(vision, {
-                    baseOptions: {
-                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-                        delegate: "CPU"
-                    },
-                    runningMode: "IMAGE"
-                });
-                
-                isAIReady = true;
-                console.log("IA MediaPipe prête.");
-            } catch (error) {
-                console.error("Erreur init IA:", error);
-                alert("Erreur de chargement IA : " + (error.message || "Réseau bloqué par le navigateur."));
-            }
-        }
 
         // Chargement asynchrone des assets graphiques
         function loadAssets() {
             lunettesImg.src = CONFIG.LUNETTES_URL;
             cadreImg.crossOrigin = "anonymous";
-            
-            // On gère l'absence du fichier cadre.png pour que l'appli ne plante pas
             cadreImg.onerror = () => {
-                console.warn("Fichier cadre.png introuvable. Création d'un cadre générique temporaire.");
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = 1080; tempCanvas.height = 1920;
                 const tCtx = tempCanvas.getContext('2d');
-                // Cadre semi-transparent bas
                 tCtx.fillStyle = 'rgba(0,0,0,0.4)';
                 tCtx.fillRect(0, 1600, 1080, 320);
                 tCtx.fillStyle = '#ff2a5f';
@@ -284,33 +254,25 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             };
             cadreImg.src = CONFIG.CADRE_URL;
         }
-
-        // Lancement au démarrage (On charge uniquement les assets, l'IA est chargée après la capture pour économiser la RAM)
-        loadAssets();
+        loadAssets(); // On charge juste les images, 0 impact RAM.
 
         // ==========================================
-        // 2. GESTION DE LA CAPTURE
+        // 1. GESTION DE LA CAPTURE ULTRA LÉGÈRE
         // ==========================================
-        // Le bouton btn-capture étant devenu un <label>, l'ouverture de la caméra 
-        // est désormais gérée nativement par le navigateur. Plus besoin de js.click().
-
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             showLoading("Préparation de l'image...");
             
-            // ÉVITONS LE FILEREADER QUI SATURE LA RAM SUR IOS
-            // Utilisation d'un pointeur mémoire local direct (ultra léger)
+            // Mémoire fantôme (aucun poids Base64)
             const imageUrl = URL.createObjectURL(file);
             
             const img = new Image();
             img.onload = () => {
-                // Libération immédiate du pointeur mémoire
-                URL.revokeObjectURL(imageUrl);
+                URL.revokeObjectURL(imageUrl); // Libère l'image lourde
 
-                // ASTUCE ANTI-CRASH : On réduit la taille de l'image (48MP -> 1080p)
-                // AVANT de la donner à l'IA pour sauver la RAM de l'iPhone.
+                // Réduction immédiate pour sauver la RAM (Max 1080px de large)
                 const MAX_WIDTH = 1080;
                 const scale = Math.min(1, MAX_WIDTH / img.width);
                 
@@ -320,56 +282,82 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 const tCtx = tempCanvas.getContext('2d');
                 tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // On génère une version "légère" de l'image
                 const lightImg = new Image();
-                lightImg.onload = async () => {
-                    originalImage = lightImg; // On utilise l'image allégée
-                    await processWorkflow();
+                lightImg.onload = () => {
+                    originalImage = lightImg; 
+                    
+                    // ON AFFICHE LE RENDU INSTANTANÉMENT SANS L'IA !
+                    renderFinalImage();
+                    
+                    hideLoading();
+                    screenCapture.classList.add('hidden');
+                    screenResult.classList.remove('hidden');
                 };
                 lightImg.src = tempCanvas.toDataURL('image/jpeg', 0.8);
             };
             
             img.onerror = () => {
                 hideLoading();
-                alert("Erreur de lecture de l'image. Veuillez réessayer.");
+                alert("Erreur de lecture de l'image.");
             };
-            
             img.src = imageUrl;
         });
 
         // ==========================================
-        // 3. MOTEUR DE RENDU ET FUSION (L'Usine)
+        // 2. MOTEUR IA (CHARGEMENT À LA DEMANDE)
         // ==========================================
-        async function processWorkflow() {
-            // Initialisation de l'IA à la volée pour économiser la RAM pendant la prise de photo
-            if (!isAIReady) {
-                loadingText.textContent = "Initialisation de l'IA... 🤖";
-                await initAI();
-            }
-
-            // 3.1 Détection sur l'image brute
-            if (faceDetector && originalImage) {
-                loadingText.textContent = "Recherche de visages... 🤖";
+        async function initAndDetectFaces() {
+            if (isAIReady && currentFaces.length > 0) return true;
+            if (isDetecting) return false;
+            
+            isDetecting = true;
+            showLoading("Activation du mode FUN... 🕶️");
+            
+            try {
+                // IMPORT DYNAMIQUE : Le code Google n'est téléchargé que MAINTENANT.
+                const { FaceDetector, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js");
+                
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+                
+                faceDetector = await FaceDetector.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+                        delegate: "CPU"
+                    },
+                    runningMode: "IMAGE"
+                });
+                
+                isAIReady = true;
+                loadingText.textContent = "Recherche des visages...";
+                
                 const detections = faceDetector.detect(originalImage);
                 currentFaces = detections.detections || [];
+                
+                hideLoading();
+                isDetecting = false;
+                return true;
+            } catch (error) {
+                console.error("Erreur IA:", error);
+                alert("Connexion trop faible pour charger les lunettes intelligentes.");
+                hideLoading();
+                isDetecting = false;
+                funSlider.value = 0;
+                funLevel = 0;
+                return false;
             }
-
-            // 3.2 Génération du rendu final
-            loadingText.textContent = "Génération du chef-d'œuvre... ✨";
-            renderFinalImage();
-            
-            // Affiche l'écran 2
-            hideLoading();
-            screenCapture.classList.add('hidden');
-            screenResult.classList.remove('hidden');
         }
 
+        // ==========================================
+        // 3. MOTEUR DE RENDU ET FUSION
+        // ==========================================
         function renderFinalImage() {
+            if (!originalImage) return;
             const C_WIDTH = 1080;
             const C_HEIGHT = 1920;
             ctx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
 
-            // A. Recadrage Object-Fit: Cover
             const imgRatio = originalImage.width / originalImage.height;
             const canvasRatio = C_WIDTH / C_HEIGHT;
             let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
@@ -384,42 +372,29 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 offsetY = (originalImage.height - drawHeight) / 2;
             }
 
-            // Dessine la photo
             ctx.drawImage(originalImage, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
 
-            // Facteurs d'échelle pour mapper les coordonnées de l'image originale vers le canvas recadré
             const scaleX = C_WIDTH / drawWidth;
             const scaleY = C_HEIGHT / drawHeight;
 
-            // B. Superposition des Lunettes
+            // Ajout des lunettes SEULEMENT si FUN > 0 et visages détectés
             if (funLevel > 0 && currentFaces.length > 0) {
                 currentFaces.forEach(face => {
-                    // MediaPipe renvoie des keypoints (0 = Oeil droit (image), 1 = Oeil gauche)
-                    // Les coordonnées sont normalisées [0, 1]
                     if(!face.keypoints || face.keypoints.length < 2) return;
 
                     const rightEyeNorm = face.keypoints[0];
                     const leftEyeNorm = face.keypoints[1];
 
-                    // Conversion en pixels sur l'image source
-                    const rxSource = rightEyeNorm.x * originalImage.width;
-                    const rySource = rightEyeNorm.y * originalImage.height;
-                    const lxSource = leftEyeNorm.x * originalImage.width;
-                    const lySource = leftEyeNorm.y * originalImage.height;
+                    const rxCanvas = (rightEyeNorm.x * originalImage.width - offsetX) * scaleX;
+                    const ryCanvas = (rightEyeNorm.y * originalImage.height - offsetY) * scaleY;
+                    const lxCanvas = (leftEyeNorm.x * originalImage.width - offsetX) * scaleX;
+                    const lyCanvas = (leftEyeNorm.y * originalImage.height - offsetY) * scaleY;
 
-                    // Projection sur le Canvas (prise en compte de l'offset du recadrage)
-                    const rxCanvas = (rxSource - offsetX) * scaleX;
-                    const ryCanvas = (rySource - offsetY) * scaleY;
-                    const lxCanvas = (lxSource - offsetX) * scaleX;
-                    const lyCanvas = (lySource - offsetY) * scaleY;
-
-                    // Calcul de l'angle et de la distance
                     const dx = lxCanvas - rxCanvas;
                     const dy = lyCanvas - ryCanvas;
                     const angle = Math.atan2(dy, dx);
                     const distance = Math.sqrt(dx*dx + dy*dy);
 
-                    // Dimensionnement des lunettes selon le curseur FUN (100 = taille normale 2.8x)
                     const baseWidth = distance * 2.8;
                     const scaleFactor = funLevel / 100;
                     const glassesWidth = baseWidth * scaleFactor;
@@ -428,7 +403,6 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                     const centerX = (rxCanvas + lxCanvas) / 2;
                     const centerY = (ryCanvas + lyCanvas) / 2;
 
-                    // Dessin avec rotation
                     ctx.save();
                     ctx.translate(centerX, centerY);
                     ctx.rotate(angle);
@@ -437,18 +411,61 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 });
             }
 
-            // C. Ajout du Cadre Officiel du Club
+            // Cadre du Club
             if (cadreImg.complete && cadreImg.naturalWidth !== 0) {
                 ctx.drawImage(cadreImg, 0, 0, C_WIDTH, C_HEIGHT);
             }
 
-            // D. Export Data URL et libération mémoire
-            const dataUrl = canvas.toDataURL('image/png', 0.9);
-            previewImage.src = dataUrl;
+            previewImage.src = canvas.toDataURL('image/png', 0.9);
         }
 
         // ==========================================
-        // 4. GROWTH & VIRALITÉ (Partage / Tags)
+        // 4. INTERFACE ET INTERACTIONS
+        // ==========================================
+        
+        // Déclencheur IA au relâchement (économise la batterie)
+        funSlider.addEventListener('change', async (e) => {
+            funLevel = parseInt(e.target.value, 10);
+            if (funLevel > 0) {
+                if (!isAIReady || currentFaces.length === 0) {
+                    const success = await initAndDetectFaces();
+                    if (success) renderFinalImage();
+                } else {
+                    renderFinalImage();
+                }
+            } else {
+                renderFinalImage();
+            }
+        });
+
+        // Fluidité pendant le glissement si l'IA est déjà chargée
+        let isRendering = false;
+        funSlider.addEventListener('input', (e) => {
+            funLevel = parseInt(e.target.value, 10);
+            if ((funLevel > 0 && isAIReady && currentFaces.length > 0) || funLevel === 0) {
+                if (!isRendering) {
+                    isRendering = true;
+                    requestAnimationFrame(() => {
+                        renderFinalImage();
+                        isRendering = false;
+                    });
+                }
+            }
+        });
+
+        // Bouton Reprendre
+        document.getElementById('btn-retake').addEventListener('click', () => {
+            fileInput.value = '';
+            originalImage = null;
+            previewImage.src = '';
+            screenResult.classList.add('hidden');
+            screenCapture.classList.remove('hidden');
+            funSlider.value = 0;
+            funLevel = 0;
+        });
+
+        // ==========================================
+        // 5. VIRALITÉ ET UTILITAIRES
         // ==========================================
         
         // Bouton Partager
@@ -470,7 +487,7 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share(shareData);
                 } else {
-                    // Fallback si Web Share API image non supportée (ex: anciens navigateurs)
+                    // Fallback si Web Share API image non supportée
                     triggerDownload(dataUrl);
                 }
             } catch (err) {
@@ -499,44 +516,12 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             }
         });
 
-        // ==========================================
-        // 5. INTERFACES ET MICRO-INTERACTIONS
-        // ==========================================
-        
-        // Curseur FUN en temps réel
-        const funSlider = document.getElementById('fun-slider');
-        
-        // requestAnimationFrame pour la fluidité sur iPhone lors du drag
-        let isRendering = false;
-        funSlider.addEventListener('input', (e) => {
-            funLevel = parseInt(e.target.value, 10);
-            if (!isRendering) {
-                isRendering = true;
-                requestAnimationFrame(() => {
-                    renderFinalImage();
-                    isRendering = false;
-                });
-            }
-        });
-
-        // Bouton Reprendre
-        document.getElementById('btn-retake').addEventListener('click', () => {
-            fileInput.value = '';
-            originalImage = null;
-            previewImage.src = '';
-            screenResult.classList.add('hidden');
-            screenCapture.classList.remove('hidden');
-            // Reset du curseur par défaut
-            funSlider.value = 100;
-            funLevel = 100;
-        });
-
         // Bouton Sauvegarder
         document.getElementById('btn-save').addEventListener('click', () => {
             triggerDownload(previewImage.src);
         });
 
-        // Utilitaires
+        // Utilitaires UI
         function showLoading(text) {
             loadingText.textContent = text;
             screenLoading.classList.remove('hidden');
