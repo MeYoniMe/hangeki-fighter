@@ -10,93 +10,40 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Photo de Fin de Séance</title>
     
-    <!-- Tailwind CSS pour un design moderne et rapide -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Configuration Tailwind pour le mode sombre "OLED" -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        club: '#ff2a5f',
-                    },
-                    fontFamily: {
-                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
-                    }
+                    colors: { club: '#ff2a5f' },
+                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'] }
                 }
             }
         }
     </script>
     
     <style>
-        body {
-            background-color: #000;
-            color: #fff;
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
-        }
-        
-        .glass-panel {
-            background: rgba(25, 25, 25, 0.65);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
+        body { background-color: #000; color: #fff; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        .glass-panel { background: rgba(25, 25, 25, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .hide-scroll::-webkit-scrollbar { display: none; }
-
-        .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid #ff2a5f;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #ff2a5f; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .ratio-9-16 { aspect-ratio: 9 / 16; max-height: 70vh; }
         
-        .ratio-9-16 {
-            aspect-ratio: 9 / 16;
-            max-height: 70vh;
-        }
-
-        /* Slider Custom */
-        input[type=range] {
-            -webkit-appearance: none;
-            width: 100%;
-            background: transparent;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 28px;
-            width: 28px;
-            border-radius: 50%;
-            background: #ff2a5f;
-            cursor: pointer;
-            margin-top: -10px;
-            box-shadow: 0 0 10px rgba(255,42,95,0.8);
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 8px;
-            cursor: pointer;
-            background: rgba(255,255,255,0.2);
-            border-radius: 4px;
-        }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: #ff2a5f; cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px rgba(255,42,95,0.8); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: rgba(255,255,255,0.2); border-radius: 4px; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col overflow-hidden relative">
 
-    <!-- ========================================== -->
-    <!-- CONFIGURATION (POUR YONI)                  -->
-    <!-- ========================================== -->
     <script>
-        const CONFIG = {
+        // On attache CONFIG à window pour y avoir accès partout
+        window.CONFIG = {
             CLUB_NAME: "FitClub Elite",
             CLUB_IG: "@FitClubElite",
             CLUB_TAGS: "#WorkoutDone #FitClubElite #NoExcuses",
-            CADRE_URL: "cadre.png", // Image 1080x1920 (Centre transparent)
+            CADRE_URL: "cadre.png",
             LUNETTES_URL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 256'><path fill='%23111' d='M32 128 c 0 -30 20 -64 80 -64 c 40 0 60 20 80 40 c 20 -20 40 -40 80 -40 c 60 0 80 34 80 64 c 0 40 -40 80 -80 80 c -40 0 -60 -20 -80 -40 c -20 20 -40 40 -80 40 c -40 0 -80 -40 -80 -80 z'/><path fill='%23333' d='M16 96 L496 96 L496 112 L16 112 Z'/></svg>",
         };
     </script>
@@ -107,14 +54,9 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             <h1 class="text-3xl font-bold tracking-tight mb-2">Fin de Séance ! 💦</h1>
             <p class="text-gray-400">Prends ton selfie pour valider l'entraînement.</p>
         </div>
-
         <div class="w-full max-w-sm ratio-9-16 border-2 border-dashed border-gray-600 rounded-3xl flex items-center justify-center relative mb-8 overflow-hidden bg-gray-900">
-            <svg class="w-16 h-16 text-gray-500 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
+            <svg class="w-16 h-16 text-gray-500 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         </div>
-
         <label for="file-input" class="w-full max-w-sm bg-club hover:bg-rose-600 text-white font-bold py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(255,42,95,0.4)] flex items-center justify-center gap-2 text-lg cursor-pointer">
             📸 Prendre ma photo
         </label>
@@ -124,21 +66,16 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
     <!-- ÉCRAN DE CHARGEMENT -->
     <div id="screen-loading" class="hidden absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center">
         <div class="loader mb-4"></div>
-        <p class="text-lg font-medium text-white" id="loading-text">Optimisation de l'image...</p>
-        <p class="text-sm text-gray-400 mt-2">Anti-crash mémoire iOS activé</p>
+        <p class="text-lg font-medium text-white" id="loading-text">Optimisation...</p>
     </div>
 
     <!-- ÉCRAN 2 : RÉSULTAT -->
     <main id="screen-result" class="hidden flex-1 flex flex-col overflow-y-auto hide-scroll pb-10 z-10">
-        
         <div class="relative w-full aspect-[9/16] bg-gray-900 shadow-2xl overflow-hidden">
             <img id="preview-image" class="w-full h-full object-contain" src="" alt="Aperçu">
-            
             <button id="btn-retake" class="absolute top-4 left-4 glass-panel p-3 rounded-full text-white shadow-lg z-20">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             </button>
-
-            <!-- Le Curseur FUN intégré sur l'image -->
             <div class="absolute bottom-6 left-0 w-full px-6 z-20">
                 <div class="glass-panel p-4 rounded-2xl flex flex-col items-center">
                     <span id="slider-label" class="text-sm font-bold text-club mb-2 uppercase tracking-wide animate-pulse">✨ Glisse pour le mode FUN 🕶️</span>
@@ -152,30 +89,29 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 <div class="text-center mb-5">
                     <h2 class="text-xl font-bold leading-tight">🔥 Tag <span id="display-ig" class="text-club"></span> en Story !</h2>
                 </div>
-
                 <button id="btn-share" class="w-full bg-gradient-to-r from-club to-rose-600 text-white font-bold py-4 rounded-2xl mb-3 flex items-center justify-center gap-2 text-lg">
                     🚀 Partager ma Story Instagram
                 </button>
-
                 <button id="btn-copy-tags" class="w-full bg-white/5 border border-white/10 text-white font-medium py-3 rounded-xl mb-4 flex items-center justify-center gap-2">
-                    📋 <span id="copy-text">Copier les tags du club</span>
+                    📋 <span id="copy-text">Copier les tags</span>
                 </button>
             </div>
         </div>
     </main>
 
-    <!-- NOTIFICATION -->
     <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none">
         ✅ Copié avec succès !
     </div>
 
-    <!-- TOUTES LES DONNÉES SONT TRAITÉES SUR CES CANVAS CACHÉS (POUR ÉCONOMISER LA RAM) -->
+    <!-- CANVAS CACHÉS (POUR LE TRAITEMENT MÉMOIRE) -->
     <canvas id="base-photo-canvas" width="1080" height="1920" class="hidden"></canvas>
     <canvas id="final-render-canvas" width="1080" height="1920" class="hidden"></canvas>
 
-    <!-- CODE APPLICATIF SÉCURISÉ -->
-    <script>
-        document.getElementById('display-ig').textContent = CONFIG.CLUB_IG;
+    <!-- Type module obligatoire pour charger correctement l'IA MediaPipe via CDN -->
+    <script type="module">
+        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
+
+        document.getElementById('display-ig').textContent = window.CONFIG.CLUB_IG;
 
         // Variables Globales
         let cadreImg = new Image();
@@ -187,86 +123,72 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 
         const C_WIDTH = 1080;
         const C_HEIGHT = 1920;
-        
         const baseCanvas = document.getElementById('base-photo-canvas');
         const baseCtx = baseCanvas.getContext('2d', { willReadFrequently: true });
-        
         const finalCanvas = document.getElementById('final-render-canvas');
         const finalCtx = finalCanvas.getContext('2d');
         const previewImage = document.getElementById('preview-image');
+        const sliderLabel = document.getElementById('slider-label');
 
-        // 1. CHARGEMENT DU CADRE ET DES LUNETTES (Dès le début, car ils sont légers)
-        lunettesImg.src = CONFIG.LUNETTES_URL;
+        // 1. Chargement des images statiques
+        lunettesImg.src = window.CONFIG.LUNETTES_URL;
         cadreImg.crossOrigin = "anonymous";
-        cadreImg.onerror = () => { console.log("Cadre non trouvé, on fera sans pour le test."); };
-        cadreImg.src = CONFIG.CADRE_URL;
+        cadreImg.src = window.CONFIG.CADRE_URL;
 
-        // 2. GESTION DE LA PHOTO (L'ASTUCE DE YONI : COMPRESSION IMMÉDIATE)
-        document.getElementById('file-input').addEventListener('change', async (e) => {
+        // 2. Traitement de la Photo (Méthode Anti-Crash iOS)
+        document.getElementById('file-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Affiche l'écran de chargement
             document.getElementById('screen-loading').classList.remove('hidden');
-            
-            try {
-                // MAGIE ICI : On demande à l'iPhone de réduire la photo AVANT de la mettre en RAM
-                const bitmap = await createImageBitmap(file, {
-                    resizeWidth: 1080, // On force une largeur max adaptée à notre canvas
-                    resizeQuality: 'medium'
-                });
 
-                // Dessin sur le canvas de base avec le recadrage "Cover" (9:16)
-                const imgRatio = bitmap.width / bitmap.height;
+            // URL.createObjectURL est la méthode la plus sûre pour iOS
+            const objectUrl = URL.createObjectURL(file);
+            const img = new Image();
+            
+            img.onload = () => {
+                // Recadrage Cover 9:16
+                const imgRatio = img.width / img.height;
                 const canvasRatio = C_WIDTH / C_HEIGHT;
                 let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
 
                 if (imgRatio > canvasRatio) {
                     drawHeight = C_HEIGHT;
-                    drawWidth = bitmap.height * canvasRatio;
-                    offsetX = (bitmap.width - drawWidth) / 2;
+                    drawWidth = img.height * canvasRatio;
+                    offsetX = (img.width - drawWidth) / 2;
                 } else {
-                    drawWidth = bitmap.width;
-                    drawHeight = bitmap.width / canvasRatio;
-                    offsetY = (bitmap.height - drawHeight) / 2;
+                    drawWidth = img.width;
+                    drawHeight = img.width / canvasRatio;
+                    offsetY = (img.height - drawHeight) / 2;
                 }
 
                 baseCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-                baseCtx.drawImage(bitmap, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
+                baseCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
                 
-                // On vide la mémoire de l'image bitmap instantanément !
-                bitmap.close(); 
+                // MAGIE : On détruit instantanément l'image de la RAM !
+                URL.revokeObjectURL(objectUrl); 
                 
-                // On affiche le résultat sans lunettes
                 updateFinalRender(0);
 
-                // Changement d'écran
                 document.getElementById('screen-loading').classList.add('hidden');
                 document.getElementById('screen-capture').classList.add('hidden');
                 document.getElementById('screen-result').classList.remove('hidden');
                 
-                // Remise à zéro du curseur
                 document.getElementById('fun-slider').value = 0;
-                document.getElementById('slider-label').textContent = "✨ Glisse pour le mode FUN 🕶️";
-
-            } catch (error) {
-                alert("Erreur lors de la lecture de la photo. Réessayez !");
-                document.getElementById('screen-loading').classList.add('hidden');
-            }
+                sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
+            };
+            img.src = objectUrl;
         });
 
-        // 3. FONCTION DE RENDU
+        // 3. Fonction de rendu (Dessin)
         function updateFinalRender(funLevel) {
-            // Copie la photo de base
             finalCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
             finalCtx.drawImage(baseCanvas, 0, 0);
 
-            // Dessine les lunettes si on a détecté des visages et que le curseur est bougé
             if (funLevel > 0 && currentFaces.length > 0) {
                 currentFaces.forEach(face => {
                     if(!face.keypoints || face.keypoints.length < 2) return;
-                    
-                    const rightEye = face.keypoints[0]; // Déjà en pixels par rapport au canvas de 1080
+                    const rightEye = face.keypoints[0];
                     const leftEye = face.keypoints[1];
 
                     const dx = (leftEye.x * C_WIDTH) - (rightEye.x * C_WIDTH);
@@ -274,11 +196,9 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                     const angle = Math.atan2(dy, dx);
                     const distance = Math.sqrt(dx*dx + dy*dy);
 
-                    // Taille de base + le pourcentage du slider "FUN"
                     const baseWidth = distance * 2.8; 
                     const glassesWidth = baseWidth * (1 + (funLevel / 150)); 
                     const glassesHeight = glassesWidth * (lunettesImg.height / lunettesImg.width);
-
                     const centerX = (rightEye.x * C_WIDTH + leftEye.x * C_WIDTH) / 2;
                     const centerY = (rightEye.y * C_HEIGHT + leftEye.y * C_HEIGHT) / 2;
 
@@ -290,42 +210,26 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 });
             }
 
-            // Ajoute le cadre par dessus
             if (cadreImg.complete && cadreImg.naturalWidth !== 0) {
                 finalCtx.drawImage(cadreImg, 0, 0, C_WIDTH, C_HEIGHT);
             }
-
-            // Mise à jour de l'image affichée
-            previewImage.src = finalCanvas.toDataURL('image/jpeg', 0.85); // JPEG = Moins lourd que PNG !
+            previewImage.src = finalCanvas.toDataURL('image/jpeg', 0.85);
         }
 
-        // 4. L'IA TARDIVE (CHARGÉE UNIQUEMENT AU CURSEUR)
-        const slider = document.getElementById('fun-slider');
-        const sliderLabel = document.getElementById('slider-label');
-
-        slider.addEventListener('input', async (e) => {
+        // 4. L'IA TARDIVE : Téléchargement dynamique au glissement
+        document.getElementById('fun-slider').addEventListener('input', async (e) => {
             const funLevel = parseInt(e.target.value);
 
-            // Si c'est la première fois qu'on bouge le curseur, on charge l'IA !
             if (funLevel > 0 && !aiLoaded && !aiLoadingInProgress) {
                 aiLoadingInProgress = true;
-                sliderLabel.textContent = "⏳ Chargement IA...";
+                sliderLabel.textContent = "⏳ Téléchargement de l'IA...";
                 
                 try {
-                    // Injection dynamique et propre du script Google
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
-                        script.onload = resolve;
-                        script.onerror = reject;
-                        document.head.appendChild(script);
-                    });
-
-                    // Initialisation
-                    const vision = await window.FilesetResolver.forVisionTasks(
+                    // Chargement du moteur lourd WASM uniquement maintenant
+                    const vision = await FilesetResolver.forVisionTasks(
                         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
                     );
-                    faceDetector = await window.FaceDetector.createFromOptions(vision, {
+                    faceDetector = await FaceDetector.createFromOptions(vision, {
                         baseOptions: {
                             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
                             delegate: "CPU"
@@ -333,29 +237,25 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                         runningMode: "IMAGE"
                     });
 
-                    // Analyse de l'image (sur le Canvas de base !)
                     const detections = faceDetector.detect(baseCanvas);
                     currentFaces = detections.detections || [];
-                    
                     aiLoaded = true;
-                    sliderLabel.textContent = "😎 Ajuste la taille des lunettes !";
-                    
+                    sliderLabel.textContent = "😎 Ajuste la taille !";
                 } catch (err) {
-                    sliderLabel.textContent = "❌ Erreur IA. Mode normal.";
+                    sliderLabel.textContent = "❌ Erreur de réseau (IA ignorée)";
                     console.error(err);
                 }
+                aiLoadingInProgress = false;
             }
 
-            // Mise à jour en temps réel (si l'IA est chargée ou si on remet à 0)
             if (aiLoaded || funLevel === 0) {
                 if (funLevel === 0) sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
-                else sliderLabel.textContent = "😎 Ajuste la taille des lunettes !";
-                
+                else if (aiLoaded) sliderLabel.textContent = "😎 Ajuste la taille !";
                 requestAnimationFrame(() => updateFinalRender(funLevel));
             }
         });
 
-        // 5. BOUTONS D'ACTION
+        // 5. Boutons de navigation et partage
         document.getElementById('btn-retake').addEventListener('click', () => {
             document.getElementById('file-input').value = '';
             document.getElementById('screen-result').classList.add('hidden');
@@ -371,8 +271,8 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({
-                        title: CONFIG.CLUB_NAME,
-                        text: `Fin de séance ! 🔥 @${CONFIG.CLUB_IG} ${CONFIG.CLUB_TAGS}`,
+                        title: window.CONFIG.CLUB_NAME,
+                        text: `Fin de séance ! 🔥 ${window.CONFIG.CLUB_IG} ${window.CONFIG.CLUB_TAGS}`,
                         files: [file]
                     });
                 } else {
@@ -385,9 +285,8 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         });
 
         document.getElementById('btn-copy-tags').addEventListener('click', async () => {
-            const textToCopy = `${CONFIG.CLUB_IG} ${CONFIG.CLUB_TAGS}`;
             try {
-                await navigator.clipboard.writeText(textToCopy);
+                await navigator.clipboard.writeText(`${window.CONFIG.CLUB_IG} ${window.CONFIG.CLUB_TAGS}`);
                 const toast = document.getElementById('toast');
                 toast.classList.remove('opacity-0', 'translate-y-[-20px]');
                 setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]'), 2000);
