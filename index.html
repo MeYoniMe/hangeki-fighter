@@ -66,6 +66,29 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             aspect-ratio: 9 / 16;
             max-height: 70vh;
         }
+
+        /* Style du curseur FUN (Custom Webkit pour iOS) */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: #ff2a5f;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255,42,95,0.6);
+            margin-top: -8px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col overflow-hidden relative">
@@ -133,10 +156,12 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             </button>
 
-            <!-- Toggle Lunettes -->
-            <button id="btn-toggle-glasses" class="absolute top-4 right-4 glass-panel px-4 py-2 rounded-full text-sm font-semibold shadow-lg z-20 flex items-center gap-2 border-club">
-                🕶️ IA <span id="toggle-status" class="text-club">ON</span>
-            </button>
+            <!-- Curseur FUN -->
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 glass-panel px-5 py-3 rounded-2xl shadow-2xl z-20 flex items-center gap-4 w-11/12 max-w-xs border border-white/20 backdrop-blur-md">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Sérieux</span>
+                <input type="range" id="fun-slider" min="0" max="150" value="100" class="w-full">
+                <span class="text-xs font-bold text-club uppercase tracking-wide">Fun 🔥</span>
+            </div>
         </div>
 
         <!-- Moteur Viralité -->
@@ -177,16 +202,13 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 
     <!-- Moteur IA et Logique Applicative -->
     <script type="module">
-        // Importation du modèle MediaPipe Tasks Vision depuis le CDN
-        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
-
         // ==========================================
         // ETAT DE L'APPLICATION
         // ==========================================
         let faceDetector = null;
         let originalImage = null; // Image brute chargée
         let currentFaces = [];
-        let glassesEnabled = true;
+        let funLevel = 100; // Niveau de FUN (0 = sans lunettes, >0 = taille des lunettes)
         
         let cadreImg = new Image();
         let lunettesImg = new Image();
@@ -212,6 +234,10 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         async function initAI() {
             if (isAIReady) return;
             try {
+                // IMPORT DYNAMIQUE : L'IA n'est chargée en mémoire QUE lorsque c'est nécessaire.
+                // Cela empêche l'iPhone de tuer Safari pendant la prise de photo.
+                const { FaceDetector, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js");
+
                 // Charge le moteur WASM
                 const vision = await FilesetResolver.forVisionTasks(
                     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
@@ -275,41 +301,41 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 
             showLoading("Préparation de l'image...");
             
-            // On utilise un FileReader classique
-            const reader = new FileReader();
+            // ÉVITONS LE FILEREADER QUI SATURE LA RAM SUR IOS
+            // Utilisation d'un pointeur mémoire local direct (ultra léger)
+            const imageUrl = URL.createObjectURL(file);
             
-            reader.onload = (event) => {
-                const img = new Image();
-                img.onload = () => {
-                    // ASTUCE ANTI-CRASH : On réduit la taille de l'image (48MP -> 1080p)
-                    // AVANT de la donner à l'IA pour sauver la RAM de l'iPhone.
-                    const MAX_WIDTH = 1080;
-                    const scale = Math.min(1, MAX_WIDTH / img.width);
-                    
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = img.width * scale;
-                    tempCanvas.height = img.height * scale;
-                    const tCtx = tempCanvas.getContext('2d');
-                    tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
-                    
-                    // On génère une version "légère" de l'image
-                    const lightImg = new Image();
-                    lightImg.onload = async () => {
-                        originalImage = lightImg; // On utilise l'image allégée
-                        await processWorkflow();
-                    };
-                    lightImg.src = tempCanvas.toDataURL('image/jpeg', 0.8);
-                };
+            const img = new Image();
+            img.onload = () => {
+                // Libération immédiate du pointeur mémoire
+                URL.revokeObjectURL(imageUrl);
+
+                // ASTUCE ANTI-CRASH : On réduit la taille de l'image (48MP -> 1080p)
+                // AVANT de la donner à l'IA pour sauver la RAM de l'iPhone.
+                const MAX_WIDTH = 1080;
+                const scale = Math.min(1, MAX_WIDTH / img.width);
                 
-                img.onerror = () => {
-                    hideLoading();
-                    alert("Erreur de lecture de l'image. Veuillez réessayer.");
-                };
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = img.width * scale;
+                tempCanvas.height = img.height * scale;
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
                 
-                img.src = event.target.result;
+                // On génère une version "légère" de l'image
+                const lightImg = new Image();
+                lightImg.onload = async () => {
+                    originalImage = lightImg; // On utilise l'image allégée
+                    await processWorkflow();
+                };
+                lightImg.src = tempCanvas.toDataURL('image/jpeg', 0.8);
             };
             
-            reader.readAsDataURL(file);
+            img.onerror = () => {
+                hideLoading();
+                alert("Erreur de lecture de l'image. Veuillez réessayer.");
+            };
+            
+            img.src = imageUrl;
         });
 
         // ==========================================
@@ -367,7 +393,7 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             const scaleY = C_HEIGHT / drawHeight;
 
             // B. Superposition des Lunettes
-            if (glassesEnabled && currentFaces.length > 0) {
+            if (funLevel > 0 && currentFaces.length > 0) {
                 currentFaces.forEach(face => {
                     // MediaPipe renvoie des keypoints (0 = Oeil droit (image), 1 = Oeil gauche)
                     // Les coordonnées sont normalisées [0, 1]
@@ -394,8 +420,10 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                     const angle = Math.atan2(dy, dx);
                     const distance = Math.sqrt(dx*dx + dy*dy);
 
-                    // Dimensionnement des lunettes (ajustement esthétique)
-                    const glassesWidth = distance * 2.8; // Ratio pour couvrir les bords du visage
+                    // Dimensionnement des lunettes selon le curseur FUN (100 = taille normale 2.8x)
+                    const baseWidth = distance * 2.8;
+                    const scaleFactor = funLevel / 100;
+                    const glassesWidth = baseWidth * scaleFactor;
                     const glassesHeight = glassesWidth * (lunettesImg.height / lunettesImg.width);
 
                     const centerX = (rxCanvas + lxCanvas) / 2;
@@ -476,23 +504,20 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         // 5. INTERFACES ET MICRO-INTERACTIONS
         // ==========================================
         
-        // Toggle Lunettes IA
-        const btnToggleGlasses = document.getElementById('btn-toggle-glasses');
-        const toggleStatus = document.getElementById('toggle-status');
-        btnToggleGlasses.addEventListener('click', () => {
-            glassesEnabled = !glassesEnabled;
-            if (glassesEnabled) {
-                toggleStatus.textContent = "ON";
-                btnToggleGlasses.classList.replace('border-gray-500', 'border-club');
-            } else {
-                toggleStatus.textContent = "OFF";
-                btnToggleGlasses.classList.replace('border-club', 'border-gray-500');
+        // Curseur FUN en temps réel
+        const funSlider = document.getElementById('fun-slider');
+        
+        // requestAnimationFrame pour la fluidité sur iPhone lors du drag
+        let isRendering = false;
+        funSlider.addEventListener('input', (e) => {
+            funLevel = parseInt(e.target.value, 10);
+            if (!isRendering) {
+                isRendering = true;
+                requestAnimationFrame(() => {
+                    renderFinalImage();
+                    isRendering = false;
+                });
             }
-            showLoading("Mise à jour...");
-            setTimeout(() => {
-                renderFinalImage();
-                hideLoading();
-            }, 50); // Petite pause pour l'UI
         });
 
         // Bouton Reprendre
@@ -502,6 +527,9 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             previewImage.src = '';
             screenResult.classList.add('hidden');
             screenCapture.classList.remove('hidden');
+            // Reset du curseur par défaut
+            funSlider.value = 100;
+            funLevel = 100;
         });
 
         // Bouton Sauvegarder
