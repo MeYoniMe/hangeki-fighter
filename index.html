@@ -185,6 +185,9 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 
     <!-- LOGIQUE JAVASCRIPT -->
     <script type="module">
+        // IMPORT STATIQUE OFFICIEL : Évite le blocage de sécurité d'iOS Safari
+        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
+
         // ÉTAT
         let faceDetector = null;
         let originalImage = null; 
@@ -269,17 +272,12 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             
             try {
                 if (!faceDetector) {
-                    loadingText.textContent = "Téléchargement IA...";
-                    
-                    // Import dynamique : Le code IA n'existe pas tant qu'on ne glisse pas le curseur.
-                    const mediapipe = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js");
-                    
                     loadingText.textContent = "Démarrage moteur...";
-                    const vision = await mediapipe.FilesetResolver.forVisionTasks(
+                    const vision = await FilesetResolver.forVisionTasks(
                         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
                     );
                     
-                    faceDetector = await mediapipe.FaceDetector.createFromOptions(vision, {
+                    faceDetector = await FaceDetector.createFromOptions(vision, {
                         baseOptions: {
                             modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
                             delegate: "CPU"
@@ -308,7 +306,8 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 return true;
             } catch (error) {
                 console.error("Erreur IA MediaPipe:", error);
-                showToastError("Impossible d'activer l'IA. Vérifiez votre connexion.");
+                // Affiche l'erreur exacte d'Apple pour cibler le problème si besoin
+                showToastError(error.message || "Impossible d'activer l'IA.");
                 hideLoading();
                 isDetecting = false;
                 return false;
