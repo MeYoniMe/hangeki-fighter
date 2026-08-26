@@ -202,6 +202,9 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 
     <!-- Moteur IA et Logique Applicative -->
     <script type="module">
+        // Import statique robuste, compatible avec les navigateurs internes (QR Code / NFC)
+        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
+
         // ==========================================
         // ETAT DE L'APPLICATION
         // ==========================================
@@ -234,10 +237,6 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         async function initAI() {
             if (isAIReady) return;
             try {
-                // IMPORT DYNAMIQUE : L'IA n'est chargée en mémoire QUE lorsque c'est nécessaire.
-                // Cela empêche l'iPhone de tuer Safari pendant la prise de photo.
-                const { FaceDetector, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js");
-
                 // Charge le moteur WASM
                 const vision = await FilesetResolver.forVisionTasks(
                     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
@@ -256,7 +255,7 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 console.log("IA MediaPipe prête.");
             } catch (error) {
                 console.error("Erreur init IA:", error);
-                alert("Erreur de chargement de l'IA. Continuez sans détection.");
+                alert("Erreur de chargement IA : " + (error.message || "Réseau bloqué par le navigateur."));
             }
         }
 
