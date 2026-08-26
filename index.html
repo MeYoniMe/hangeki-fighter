@@ -104,8 +104,8 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             </svg>
         </div>
 
-        <!-- Input File masqué (Ouvre la caméra frontale sur mobile) -->
-        <input type="file" id="file-input" accept="image/*" capture="user" class="opacity-0 absolute -z-10 w-0 h-0">
+        <!-- Input File masqué (Sans capture="user" pour éviter le crash mémoire iOS) -->
+        <input type="file" id="file-input" accept="image/*" class="opacity-0 absolute -z-10 w-0 h-0">
         
         <!-- Remplacement du <button> par un <label> natif pour 100% de compatibilité iOS -->
         <label for="file-input" id="btn-capture" class="w-full max-w-sm bg-club hover:bg-rose-600 text-white font-bold py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(255,42,95,0.4)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 text-lg cursor-pointer">
@@ -273,24 +273,43 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             const file = e.target.files[0];
             if (!file) return;
 
-            showLoading("Initialisation et Analyse...");
+            showLoading("Préparation de l'image...");
             
-            // Utilisation de URL.createObjectURL au lieu de FileReader (contourne les bugs de mémoire Safari)
-            const objectUrl = URL.createObjectURL(file);
-            const img = new Image();
+            // On utilise un FileReader classique
+            const reader = new FileReader();
             
-            img.onload = async () => {
-                originalImage = img;
-                await processWorkflow();
-                URL.revokeObjectURL(objectUrl); // Libération mémoire immédiate
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    // ASTUCE ANTI-CRASH : On réduit la taille de l'image (48MP -> 1080p)
+                    // AVANT de la donner à l'IA pour sauver la RAM de l'iPhone.
+                    const MAX_WIDTH = 1080;
+                    const scale = Math.min(1, MAX_WIDTH / img.width);
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = img.width * scale;
+                    tempCanvas.height = img.height * scale;
+                    const tCtx = tempCanvas.getContext('2d');
+                    tCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    // On génère une version "légère" de l'image
+                    const lightImg = new Image();
+                    lightImg.onload = async () => {
+                        originalImage = lightImg; // On utilise l'image allégée
+                        await processWorkflow();
+                    };
+                    lightImg.src = tempCanvas.toDataURL('image/jpeg', 0.8);
+                };
+                
+                img.onerror = () => {
+                    hideLoading();
+                    alert("Erreur de lecture de l'image. Veuillez réessayer.");
+                };
+                
+                img.src = event.target.result;
             };
             
-            img.onerror = () => {
-                hideLoading();
-                alert("Erreur de lecture de l'image. Veuillez réessayer.");
-            };
-            
-            img.src = objectUrl;
+            reader.readAsDataURL(file);
         });
 
         // ==========================================
