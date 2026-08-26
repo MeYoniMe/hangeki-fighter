@@ -34,20 +34,6 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: #ff2a5f; cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px rgba(255,42,95,0.8); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: rgba(255,255,255,0.2); border-radius: 4px; }
     </style>
-
-    <!-- 
-      ÉTAPE 1 : IMPORT RÉSEAU SÉCURISÉ (Aucun code dynamique bloqué par Safari) 
-      On charge juste les définitions, on NE LANCE PAS le modèle lourd ici.
-    -->
-    <script type="module">
-        try {
-            import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
-            window.FaceDetector = FaceDetector;
-            window.FilesetResolver = FilesetResolver;
-        } catch (e) {
-            console.error("Erreur de préchargement du module:", e);
-        }
-    </script>
 </head>
 <body class="min-h-screen flex flex-col overflow-hidden relative">
 
@@ -125,7 +111,6 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
     <script>
         document.getElementById('display-ig').textContent = window.CONFIG.CLUB_IG;
 
-        // Variables Globales
         let cadreImg = new Image();
         let lunettesImg = new Image();
         let currentFaces = [];
@@ -147,7 +132,7 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
         cadreImg.src = window.CONFIG.CADRE_URL;
 
         // ==========================================
-        // 1. CAPTURE : L'ANTI-CRASH JETSAM (Le délai vital de 800ms)
+        // 1. CAPTURE & ANTI-CRASH RAM ABSOLU
         // ==========================================
         document.getElementById('file-input').addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -156,65 +141,51 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             document.getElementById('screen-capture').classList.add('hidden');
             document.getElementById('screen-loading').classList.remove('hidden');
             
-            // NOUVEAU : On lit et sauvegarde la photo IMMÉDIATEMENT avant que l'iPhone ne la supprime.
-            const reader = new FileReader();
+            // On utilise un pointeur mémoire ultra-léger (Évite le crash des 2 secondes)
+            const objectUrl = URL.createObjectURL(file);
+            const img = new Image();
             
-            reader.onload = (event) => {
-                const imageData = event.target.result;
+            img.onload = () => {
+                const imgRatio = img.width / img.height;
+                const canvasRatio = C_WIDTH / C_HEIGHT;
+                let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
+                if (imgRatio > canvasRatio) {
+                    drawHeight = C_HEIGHT;
+                    drawWidth = img.height * canvasRatio;
+                    offsetX = (img.width - drawWidth) / 2;
+                } else {
+                    drawWidth = img.width;
+                    drawHeight = img.width / canvasRatio;
+                    offsetY = (img.height - drawHeight) / 2;
+                }
+
+                // Dessin sur Canvas
+                baseCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
+                baseCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
                 
-                // On laisse 800 millisecondes à l'iPhone pour libérer la RAM de l'appareil photo
-                setTimeout(() => {
-                    const img = new Image();
-                    
-                    img.onload = () => {
-                        // Recadrage cover 9:16
-                        const imgRatio = img.width / img.height;
-                        const canvasRatio = C_WIDTH / C_HEIGHT;
-                        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+                // DESTRUCTION IMMÉDIATE : L'image n'est plus en RAM, Safari ne crash plus !
+                URL.revokeObjectURL(objectUrl);
+                img.src = ''; 
+                
+                updateFinalRender(0); 
 
-                        if (imgRatio > canvasRatio) {
-                            drawHeight = C_HEIGHT;
-                            drawWidth = img.height * canvasRatio;
-                            offsetX = (img.width - drawWidth) / 2;
-                        } else {
-                            drawWidth = img.width;
-                            drawHeight = img.width / canvasRatio;
-                            offsetY = (img.height - drawHeight) / 2;
-                        }
-
-                        // Dessin sur Canvas et destruction IMMÉDIATE de la photo source de la RAM
-                        baseCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-                        baseCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
-                        img.src = ''; // Libération mémoire 
-                        
-                        updateFinalRender(0); // Rendu de base (cadre + photo, sans lunettes)
-
-                        document.getElementById('screen-loading').classList.add('hidden');
-                        document.getElementById('screen-result').classList.remove('hidden');
-                        document.getElementById('fun-slider').value = 0;
-                        sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
-                    };
-
-                    img.onerror = () => { 
-                        document.getElementById('loading-text').textContent = "❌ Erreur de lecture.";
-                        setTimeout(() => location.reload(), 2000);
-                    };
-                    
-                    img.src = imageData;
-                }, 800); // <-- Ce délai est LA clé pour ne pas retourner à l'accueil
+                document.getElementById('screen-loading').classList.add('hidden');
+                document.getElementById('screen-result').classList.remove('hidden');
+                document.getElementById('fun-slider').value = 0;
+                sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
             };
 
-            reader.onerror = () => {
-                document.getElementById('loading-text').textContent = "❌ Fichier illisible.";
+            img.onerror = () => { 
+                document.getElementById('loading-text').textContent = "❌ Erreur de lecture.";
                 setTimeout(() => location.reload(), 2000);
             };
-
-            // Lancement immédiat de la lecture
-            reader.readAsDataURL(file);
+            
+            img.src = objectUrl;
         });
 
         // ==========================================
-        // 2. FONCTION DE RENDU
+        // 2. RENDU
         // ==========================================
         function updateFinalRender(funLevel) {
             finalCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
@@ -251,55 +222,63 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 finalCtx.drawImage(cadreImg, 0, 0, C_WIDTH, C_HEIGHT);
             }
 
-            // Export en JPEG 0.85 (beaucoup plus léger pour le navigateur qu'un PNG)
+            // JPEG 0.85 pour économiser la mémoire de l'écran affiché
             previewImage.src = finalCanvas.toDataURL('image/jpeg', 0.85); 
         }
 
         // ==========================================
-        // 3. IA : LANCÉE AU CURSEUR (SANS REQUÊTE RÉSEAU DYNAMIQUE)
+        // 3. IA : INJECTION INVISIBLE & DYNAMIQUE
         // ==========================================
-        document.getElementById('fun-slider').addEventListener('input', async (e) => {
+        document.getElementById('fun-slider').addEventListener('input', (e) => {
             const funLevel = parseInt(e.target.value);
 
             if (funLevel > 0 && !aiLoaded && !aiLoadingInProgress) {
                 aiLoadingInProgress = true;
                 sliderLabel.textContent = "⏳ Initialisation IA...";
                 
-                try {
-                    // On vérifie que le script chargé en haut de page a bien fait son boulot
-                    if (!window.FaceDetector || !window.FilesetResolver) {
-                        throw new Error("L'IA n'a pas pu se charger (Bloqué par Safari)");
-                    }
-
+                // On écoute le signal du script injecté
+                window.addEventListener('mp_ready', async () => {
                     sliderLabel.textContent = "⏳ Téléchargement modèle (patientez)...";
-                    const vision = await window.FilesetResolver.forVisionTasks(
-                        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-                    );
-                    
-                    sliderLabel.textContent = "⏳ Analyse du visage...";
-                    faceDetector = await window.FaceDetector.createFromOptions(vision, {
-                        baseOptions: {
-                            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-                            delegate: "CPU"
-                        },
-                        runningMode: "IMAGE"
-                    });
-                    
-                    const detections = faceDetector.detect(baseCanvas);
-                    currentFaces = detections.detections || [];
-                    
-                    if(currentFaces.length === 0) {
-                        sliderLabel.textContent = "⚠️ Aucun visage détecté !";
-                        setTimeout(() => { sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️"; }, 3000);
-                    } else {
-                        sliderLabel.textContent = "😎 Ajuste la taille !";
+                    try {
+                        const vision = await window.MediaPipe.FilesetResolver.forVisionTasks(
+                            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                        );
+                        sliderLabel.textContent = "⏳ Analyse du visage...";
+                        faceDetector = await window.MediaPipe.FaceDetector.createFromOptions(vision, {
+                            baseOptions: {
+                                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+                                delegate: "CPU"
+                            },
+                            runningMode: "IMAGE"
+                        });
+                        
+                        const detections = faceDetector.detect(baseCanvas);
+                        currentFaces = detections.detections || [];
+                        
+                        if(currentFaces.length === 0) {
+                            sliderLabel.textContent = "⚠️ Aucun visage détecté !";
+                            setTimeout(() => { sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️"; }, 3000);
+                        } else {
+                            sliderLabel.textContent = "😎 Ajuste la taille !";
+                        }
+                        aiLoaded = true;
+                        requestAnimationFrame(() => updateFinalRender(parseInt(document.getElementById('fun-slider').value)));
+                    } catch (err) {
+                        sliderLabel.textContent = "❌ Erreur réseau.";
+                        console.error(err);
                     }
-                    aiLoaded = true;
-                } catch (err) {
-                    sliderLabel.textContent = "❌ " + (err.message || "Erreur réseau");
-                    console.error("Erreur IA:", err);
-                }
-                aiLoadingInProgress = false;
+                    aiLoadingInProgress = false;
+                }, { once: true });
+
+                // INJECTION DU SCRIPT : Safari l'autorise à 100% car on crée un vrai bloc <script>
+                const script = document.createElement('script');
+                script.type = 'module';
+                script.innerHTML = `
+                    import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
+                    window.MediaPipe = { FaceDetector, FilesetResolver };
+                    window.dispatchEvent(new Event('mp_ready'));
+                `;
+                document.head.appendChild(script);
             }
 
             if (aiLoaded || funLevel === 0) {
