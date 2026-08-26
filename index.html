@@ -1,0 +1,511 @@
+<!--
+Copyright (c) 2026 Bressard Yoni. All Rights Reserved. Tous droits réservés.
+Ce code source et son architecture logicielle sont la propriété exclusive de Bressard Yoni.
+Toute reproduction, modification, distribution ou rétro-ingénierie non autorisée est strictement interdite.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Photo de Fin de Séance</title>
+    
+    <!-- Tailwind CSS pour un design moderne et rapide -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuration Tailwind pour le mode sombre "OLED" -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        club: '#ff2a5f', // Couleur primaire de ton club (modifie ici si besoin)
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Effets Glassmorphism et utilitaires UI */
+        body {
+            background-color: #000;
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        
+        .glass-panel {
+            background: rgba(25, 25, 25, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Spinner de chargement */
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid #ff2a5f;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Guide visuel 9:16 pour la capture */
+        .ratio-9-16 {
+            aspect-ratio: 9 / 16;
+            max-height: 70vh;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-hidden relative">
+
+    <!-- ========================================== -->
+    <!-- ZONE DE PERSONNALISATION (POUR YONI)       -->
+    <!-- ========================================== -->
+    <script>
+        const CONFIG = {
+            CLUB_NAME: "FitClub Elite",
+            CLUB_IG: "@FitClubElite",
+            CLUB_TAGS: "#WorkoutDone #FitClubElite #NoExcuses",
+            // Nom de ton cadre transparent (doit faire 1080x1920) à placer dans le même dossier
+            CADRE_URL: "cadre.png",
+            
+            // Lunettes de soleil SVG intégrées (autonome)
+            // Tu peux remplacer l'URL par une image PNG si tu préfères
+            LUNETTES_URL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 256'><path fill='%23111' d='M32 128 c 0 -30 20 -64 80 -64 c 40 0 60 20 80 40 c 20 -20 40 -40 80 -40 c 60 0 80 34 80 64 c 0 40 -40 80 -80 80 c -40 0 -60 -20 -80 -40 c -20 20 -40 40 -80 40 c -40 0 -80 -40 -80 -80 z'/><path fill='%23333' d='M16 96 L496 96 L496 112 L16 112 Z'/></svg>",
+        };
+    </script>
+
+    <!-- ÉCRAN 1 : CAPTURE -->
+    <main id="screen-capture" class="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold tracking-tight mb-2">Fin de Séance ! 💦</h1>
+            <p class="text-gray-400">Prends ton selfie pour valider l'entraînement.</p>
+        </div>
+
+        <!-- Repère visuel 9:16 -->
+        <div class="w-full max-w-sm ratio-9-16 border-2 border-dashed border-gray-600 rounded-3xl flex items-center justify-center relative mb-8 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent to-club opacity-10"></div>
+            
+            <svg class="w-16 h-16 text-gray-500 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+        </div>
+
+        <!-- Input File masqué (Ouvre la caméra frontale sur mobile) -->
+        <input type="file" id="file-input" accept="image/*" capture="user" class="hidden">
+        
+        <button id="btn-capture" class="w-full max-w-sm bg-club hover:bg-rose-600 text-white font-bold py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(255,42,95,0.4)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 text-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></button>
+            📸 Prendre ma photo
+        </button>
+    </main>
+
+    <!-- ÉCRAN DE CHARGEMENT -->
+    <div id="screen-loading" class="hidden absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
+        <div class="loader mb-4"></div>
+        <p class="text-lg font-medium text-white" id="loading-text">Initialisation de l'IA...</p>
+        <p class="text-sm text-gray-400 mt-2">Traitement local sécurisé</p>
+    </div>
+
+    <!-- ÉCRAN 2 : RÉSULTAT & GROWTH -->
+    <main id="screen-result" class="hidden flex-1 flex flex-col overflow-y-auto hide-scroll pb-10 z-10">
+        
+        <!-- Preview HD Image -->
+        <div class="relative w-full aspect-[9/16] bg-gray-900 shadow-2xl">
+            <img id="preview-image" class="w-full h-full object-contain" src="" alt="Aperçu">
+            
+            <!-- Bouton Retour -->
+            <button id="btn-retake" class="absolute top-4 left-4 glass-panel p-3 rounded-full text-white shadow-lg z-20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </button>
+
+            <!-- Toggle Lunettes -->
+            <button id="btn-toggle-glasses" class="absolute top-4 right-4 glass-panel px-4 py-2 rounded-full text-sm font-semibold shadow-lg z-20 flex items-center gap-2 border-club">
+                🕶️ IA <span id="toggle-status" class="text-club">ON</span>
+            </button>
+        </div>
+
+        <!-- Moteur Viralité -->
+        <div class="px-5 -mt-6 relative z-20">
+            <div class="glass-panel rounded-3xl p-6 shadow-2xl">
+                
+                <div class="text-center mb-5">
+                    <span class="inline-block bg-white/10 text-club text-xs font-bold px-3 py-1 rounded-full mb-2 uppercase tracking-wide">Story Time</span>
+                    <h2 class="text-xl font-bold leading-tight">🔥 Tag <span id="display-ig" class="text-club"></span> pour être reposté sur la page !</h2>
+                </div>
+
+                <!-- Bouton Partage principal -->
+                <button id="btn-share" class="w-full bg-gradient-to-r from-club to-rose-600 text-white font-bold py-4 rounded-2xl mb-3 shadow-[0_0_15px_rgba(255,42,95,0.5)] transform active:scale-95 transition-transform flex items-center justify-center gap-2 text-lg">
+                    🚀 Partager ma Story Instagram
+                </button>
+
+                <!-- Bouton Copier Tags -->
+                <button id="btn-copy-tags" class="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium py-3 rounded-xl mb-4 transition-colors flex items-center justify-center gap-2">
+                    📋 <span id="copy-text">Copier les tags du club</span>
+                </button>
+
+                <!-- Fallback Sauvegarde / Local -->
+                <button id="btn-save" class="w-full text-gray-400 hover:text-white text-sm py-2 underline flex justify-center items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Sauvegarder l'image
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none">
+        ✅ Copié avec succès !
+    </div>
+
+    <!-- CANVAS CACHÉ POUR LE RENDU 1080x1920 -->
+    <canvas id="render-canvas" width="1080" height="1920" class="hidden"></canvas>
+
+    <!-- Moteur IA et Logique Applicative -->
+    <script type="module">
+        // Importation du modèle MediaPipe Tasks Vision depuis le CDN
+        import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
+
+        // ==========================================
+        // ETAT DE L'APPLICATION
+        // ==========================================
+        let faceDetector = null;
+        let originalImage = null; // Image brute chargée
+        let currentFaces = [];
+        let glassesEnabled = true;
+        
+        let cadreImg = new Image();
+        let lunettesImg = new Image();
+
+        // Éléments du DOM
+        const screenCapture = document.getElementById('screen-capture');
+        const screenResult = document.getElementById('screen-result');
+        const screenLoading = document.getElementById('screen-loading');
+        const fileInput = document.getElementById('file-input');
+        const previewImage = document.getElementById('preview-image');
+        const canvas = document.getElementById('render-canvas');
+        const ctx = canvas.getContext('2d');
+        const loadingText = document.getElementById('loading-text');
+
+        // Initialisation de l'interface avec les variables de Yoni
+        document.getElementById('display-ig').textContent = CONFIG.CLUB_IG;
+
+        // ==========================================
+        // 1. INITIALISATION DE L'IA (MediaPipe)
+        // ==========================================
+        async function initAI() {
+            try {
+                // Charge le moteur WASM
+                const vision = await FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+                
+                // Crée le détecteur de visages (modèle ultra léger)
+                faceDetector = await FaceDetector.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+                        delegate: "CPU"
+                    },
+                    runningMode: "IMAGE"
+                });
+                
+                console.log("IA MediaPipe prête.");
+            } catch (error) {
+                console.error("Erreur init IA:", error);
+                alert("Erreur de chargement de l'IA. Continuez sans détection.");
+            }
+        }
+
+        // Chargement asynchrone des assets graphiques
+        function loadAssets() {
+            lunettesImg.src = CONFIG.LUNETTES_URL;
+            cadreImg.crossOrigin = "anonymous";
+            
+            // On gère l'absence du fichier cadre.png pour que l'appli ne plante pas
+            cadreImg.onerror = () => {
+                console.warn("Fichier cadre.png introuvable. Création d'un cadre générique temporaire.");
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 1080; tempCanvas.height = 1920;
+                const tCtx = tempCanvas.getContext('2d');
+                // Cadre semi-transparent bas
+                tCtx.fillStyle = 'rgba(0,0,0,0.4)';
+                tCtx.fillRect(0, 1600, 1080, 320);
+                tCtx.fillStyle = '#ff2a5f';
+                tCtx.font = 'bold 80px sans-serif';
+                tCtx.textAlign = 'center';
+                tCtx.fillText(CONFIG.CLUB_NAME, 540, 1720);
+                tCtx.fillStyle = '#ffffff';
+                tCtx.font = '50px sans-serif';
+                tCtx.fillText(CONFIG.CLUB_TAGS, 540, 1800);
+                cadreImg.src = tempCanvas.toDataURL();
+            };
+            cadreImg.src = CONFIG.CADRE_URL;
+        }
+
+        // Lancement au démarrage
+        initAI();
+        loadAssets();
+
+        // ==========================================
+        // 2. GESTION DE LA CAPTURE
+        // ==========================================
+        document.getElementById('btn-capture').addEventListener('click', () => {
+            fileInput.click(); // Ouvre la caméra/galerie
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showLoading("Analyse de l'image...");
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = async () => {
+                    originalImage = img;
+                    await processWorkflow();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // ==========================================
+        // 3. MOTEUR DE RENDU ET FUSION (L'Usine)
+        // ==========================================
+        async function processWorkflow() {
+            // 3.1 Détection sur l'image brute
+            if (faceDetector && originalImage) {
+                loadingText.textContent = "Recherche de visages... 🤖";
+                const detections = faceDetector.detect(originalImage);
+                currentFaces = detections.detections || [];
+            }
+
+            // 3.2 Génération du rendu final
+            loadingText.textContent = "Génération du chef-d'œuvre... ✨";
+            renderFinalImage();
+            
+            // Affiche l'écran 2
+            hideLoading();
+            screenCapture.classList.add('hidden');
+            screenResult.classList.remove('hidden');
+        }
+
+        function renderFinalImage() {
+            const C_WIDTH = 1080;
+            const C_HEIGHT = 1920;
+            ctx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
+
+            // A. Recadrage Object-Fit: Cover
+            const imgRatio = originalImage.width / originalImage.height;
+            const canvasRatio = C_WIDTH / C_HEIGHT;
+            let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
+            if (imgRatio > canvasRatio) {
+                drawHeight = C_HEIGHT;
+                drawWidth = originalImage.height * canvasRatio;
+                offsetX = (originalImage.width - drawWidth) / 2;
+            } else {
+                drawWidth = originalImage.width;
+                drawHeight = originalImage.width / canvasRatio;
+                offsetY = (originalImage.height - drawHeight) / 2;
+            }
+
+            // Dessine la photo
+            ctx.drawImage(originalImage, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
+
+            // Facteurs d'échelle pour mapper les coordonnées de l'image originale vers le canvas recadré
+            const scaleX = C_WIDTH / drawWidth;
+            const scaleY = C_HEIGHT / drawHeight;
+
+            // B. Superposition des Lunettes
+            if (glassesEnabled && currentFaces.length > 0) {
+                currentFaces.forEach(face => {
+                    // MediaPipe renvoie des keypoints (0 = Oeil droit (image), 1 = Oeil gauche)
+                    // Les coordonnées sont normalisées [0, 1]
+                    if(!face.keypoints || face.keypoints.length < 2) return;
+
+                    const rightEyeNorm = face.keypoints[0];
+                    const leftEyeNorm = face.keypoints[1];
+
+                    // Conversion en pixels sur l'image source
+                    const rxSource = rightEyeNorm.x * originalImage.width;
+                    const rySource = rightEyeNorm.y * originalImage.height;
+                    const lxSource = leftEyeNorm.x * originalImage.width;
+                    const lySource = leftEyeNorm.y * originalImage.height;
+
+                    // Projection sur le Canvas (prise en compte de l'offset du recadrage)
+                    const rxCanvas = (rxSource - offsetX) * scaleX;
+                    const ryCanvas = (rySource - offsetY) * scaleY;
+                    const lxCanvas = (lxSource - offsetX) * scaleX;
+                    const lyCanvas = (lySource - offsetY) * scaleY;
+
+                    // Calcul de l'angle et de la distance
+                    const dx = lxCanvas - rxCanvas;
+                    const dy = lyCanvas - ryCanvas;
+                    const angle = Math.atan2(dy, dx);
+                    const distance = Math.sqrt(dx*dx + dy*dy);
+
+                    // Dimensionnement des lunettes (ajustement esthétique)
+                    const glassesWidth = distance * 2.8; // Ratio pour couvrir les bords du visage
+                    const glassesHeight = glassesWidth * (lunettesImg.height / lunettesImg.width);
+
+                    const centerX = (rxCanvas + lxCanvas) / 2;
+                    const centerY = (ryCanvas + lyCanvas) / 2;
+
+                    // Dessin avec rotation
+                    ctx.save();
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(angle);
+                    ctx.drawImage(lunettesImg, -glassesWidth/2, -glassesHeight/2, glassesWidth, glassesHeight);
+                    ctx.restore();
+                });
+            }
+
+            // C. Ajout du Cadre Officiel du Club
+            if (cadreImg.complete && cadreImg.naturalWidth !== 0) {
+                ctx.drawImage(cadreImg, 0, 0, C_WIDTH, C_HEIGHT);
+            }
+
+            // D. Export Data URL et libération mémoire
+            const dataUrl = canvas.toDataURL('image/png', 0.9);
+            previewImage.src = dataUrl;
+        }
+
+        // ==========================================
+        // 4. GROWTH & VIRALITÉ (Partage / Tags)
+        // ==========================================
+        
+        // Bouton Partager
+        document.getElementById('btn-share').addEventListener('click', async () => {
+            const dataUrl = previewImage.src;
+            
+            try {
+                // Convertir Data URL en File object pour le partage natif
+                const res = await fetch(dataUrl);
+                const blob = await res.blob();
+                const file = new File([blob], 'workout-story.png', { type: 'image/png' });
+                
+                const shareData = {
+                    title: CONFIG.CLUB_NAME,
+                    text: `Fin de séance ! 🔥 Rejoignez-moi chez ${CONFIG.CLUB_IG} ${CONFIG.CLUB_TAGS}`,
+                    files: [file]
+                };
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback si Web Share API image non supportée (ex: anciens navigateurs)
+                    triggerDownload(dataUrl);
+                }
+            } catch (err) {
+                console.log("Partage annulé ou échoué", err);
+                if (err.name !== 'AbortError') {
+                    triggerDownload(dataUrl);
+                }
+            }
+        });
+
+        // Bouton Copier les Tags
+        document.getElementById('btn-copy-tags').addEventListener('click', async () => {
+            const textToCopy = `${CONFIG.CLUB_IG} ${CONFIG.CLUB_TAGS}`;
+            try {
+                await navigator.clipboard.writeText(textToCopy);
+                showToast();
+            } catch (err) {
+                // Fallback ancienne méthode
+                const tempInput = document.createElement("input");
+                tempInput.value = textToCopy;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand("copy");
+                document.body.removeChild(tempInput);
+                showToast();
+            }
+        });
+
+        // ==========================================
+        // 5. INTERFACES ET MICRO-INTERACTIONS
+        // ==========================================
+        
+        // Toggle Lunettes IA
+        const btnToggleGlasses = document.getElementById('btn-toggle-glasses');
+        const toggleStatus = document.getElementById('toggle-status');
+        btnToggleGlasses.addEventListener('click', () => {
+            glassesEnabled = !glassesEnabled;
+            if (glassesEnabled) {
+                toggleStatus.textContent = "ON";
+                btnToggleGlasses.classList.replace('border-gray-500', 'border-club');
+            } else {
+                toggleStatus.textContent = "OFF";
+                btnToggleGlasses.classList.replace('border-club', 'border-gray-500');
+            }
+            showLoading("Mise à jour...");
+            setTimeout(() => {
+                renderFinalImage();
+                hideLoading();
+            }, 50); // Petite pause pour l'UI
+        });
+
+        // Bouton Reprendre
+        document.getElementById('btn-retake').addEventListener('click', () => {
+            fileInput.value = '';
+            originalImage = null;
+            previewImage.src = '';
+            screenResult.classList.add('hidden');
+            screenCapture.classList.remove('hidden');
+        });
+
+        // Bouton Sauvegarder
+        document.getElementById('btn-save').addEventListener('click', () => {
+            triggerDownload(previewImage.src);
+        });
+
+        // Utilitaires
+        function showLoading(text) {
+            loadingText.textContent = text;
+            screenLoading.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            screenLoading.classList.add('hidden');
+        }
+
+        function triggerDownload(dataUrl) {
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `Selfie-${CONFIG.CLUB_NAME.replace(/\s+/g, '')}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            const btnText = document.getElementById('copy-text');
+            btnText.textContent = "Copié !";
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-[-20px]');
+                setTimeout(() => { btnText.textContent = "Copier les tags du club"; }, 300);
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
