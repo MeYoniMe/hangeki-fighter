@@ -1,4 +1,4 @@
-<!--
+<!-- 
 Copyright (c) 2026 Bressard Yoni. All Rights Reserved. Tous droits réservés.
 Ce code source et son architecture logicielle sont la propriété exclusive de Bressard Yoni.
 Toute reproduction, modification, distribution ou rétro-ingénierie non autorisée est strictement interdite.
@@ -7,326 +7,677 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Photo de Fin de Séance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Club Sportif - Fin d'entraînement</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { club: '#ff2a5f' },
-                    fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    
+    <!-- App Web Mobile Apple -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0B0B0E">
+
     <style>
-        body { background-color: #000; color: #fff; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
-        .glass-panel { background: rgba(25, 25, 25, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .hide-scroll::-webkit-scrollbar { display: none; }
-        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #ff2a5f; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ratio-9-16 { aspect-ratio: 9 / 16; max-height: 70vh; }
+        :root {
+            --bg-color: #0B0B0E;
+            --surface-color: #1C1C24;
+            --surface-hover: #2A2A36;
+            --primary: #FF3366; /* Couleur dynamique et sportive */
+            --primary-dark: #E62E5C;
+            --text-main: #FFFFFF;
+            --text-muted: #8E8E9F;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-stack);
+            min-height: 100vh;
+            min-height: -webkit-fill-available; /* Correction Safari iOS */
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            overscroll-behavior-y: none;
+        }
+
+        html {
+            height: -webkit-fill-available;
+        }
+
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .view {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            width: 100%;
+            animation: fadeIn 0.4s ease forwards;
+            padding: max(env(safe-area-inset-top), 20px) 20px max(env(safe-area-inset-bottom), 20px) 20px;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: auto;
+            padding-top: 40px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #fff, #a5a5b4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .capture-zone {
+            margin-top: auto;
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Input File Native Customisé */
+        .cam-btn-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .cam-btn-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .cam-btn-visual {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(255, 51, 102, 0.3);
+            transition: transform 0.2s, filter 0.2s;
+        }
+
+        .cam-btn-wrapper:active .cam-btn-visual {
+            transform: scale(0.96);
+            filter: brightness(0.9);
+        }
+
+        .cam-icon {
+            width: 48px;
+            height: 48px;
+            fill: currentColor;
+        }
+
+        .cam-text {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .loader-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            max-height: 45vh;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            background-color: var(--surface-color);
+        }
+
+        #final-preview {
+            width: auto;
+            height: 100%;
+            max-height: 45vh;
+            object-fit: contain;
+            border-radius: var(--radius-md);
+        }
+
+        .actions-hub {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: auto;
+        }
+
+        .btn {
+            width: 100%;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: var(--surface-color);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:active {
+            background-color: var(--surface-hover);
+        }
+
+        .social-block {
+            background-color: var(--surface-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .social-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .social-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .social-btn {
+            background-color: #2A2A36;
+            color: white;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
         
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: #ff2a5f; cursor: pointer; margin-top: -10px; box-shadow: 0 0 10px rgba(255,42,95,0.8); }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .social-btn:active {
+            background-color: #3f3f50;
+        }
+
+        .social-btn.insta svg { color: #E1306C; }
+        .social-btn.fb svg { color: #1877F2; }
+        
+        .social-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .ios-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 6px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: max(env(safe-area-inset-bottom), 20px);
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-hidden relative">
+<body>
 
-    <script>
-        window.CONFIG = {
-            CLUB_NAME: "FitClub Elite",
-            CLUB_IG: "@FitClubElite",
-            CLUB_TAGS: "#WorkoutDone #FitClubElite #NoExcuses",
-            CADRE_URL: "cadre.png",
-            LUNETTES_URL: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 256'><path fill='%23111' d='M32 128 c 0 -30 20 -64 80 -64 c 40 0 60 20 80 40 c 20 -20 40 -40 80 -40 c 60 0 80 34 80 64 c 0 40 -40 80 -80 80 c -40 0 -60 -20 -80 -40 c -20 20 -40 40 -80 40 c -40 0 -80 -40 -80 -80 z'/><path fill='%23333' d='M16 96 L496 96 L496 112 L16 112 Z'/></svg>",
-        };
-    </script>
+    <div class="app-container">
+        
+        <!-- VUE 1 : CAPTURE -->
+        <div id="view-capture" class="view active">
+            <div class="header">
+                <h1>Workout Done 💪</h1>
+                <p>Immortalise ta fin de séance et génère ton diplôme du jour.</p>
+            </div>
 
-    <!-- ÉCRAN 1 : CAPTURE -->
-    <main id="screen-capture" class="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold tracking-tight mb-2">Fin de Séance ! 💦</h1>
-            <p class="text-gray-400">Prends ton selfie pour valider l'entraînement.</p>
-        </div>
-        <div class="w-full max-w-sm ratio-9-16 border-2 border-dashed border-gray-600 rounded-3xl flex items-center justify-center relative mb-8 overflow-hidden bg-gray-900">
-            <svg class="w-16 h-16 text-gray-500 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </div>
-        <label for="file-input" class="w-full max-w-sm bg-club hover:bg-rose-600 text-white font-bold py-4 px-6 rounded-2xl shadow-[0_0_20px_rgba(255,42,95,0.4)] flex items-center justify-center gap-2 text-lg cursor-pointer">
-            📸 Prendre ma photo
-        </label>
-        <input type="file" id="file-input" accept="image/*" class="hidden">
-    </main>
-
-    <!-- ÉCRAN DE CHARGEMENT -->
-    <div id="screen-loading" class="hidden absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center">
-        <div class="loader mb-4"></div>
-        <p class="text-lg font-medium text-white" id="loading-text">Optimisation...</p>
-    </div>
-
-    <!-- ÉCRAN 2 : RÉSULTAT -->
-    <main id="screen-result" class="hidden flex-1 flex flex-col overflow-y-auto hide-scroll pb-10 z-10">
-        <div class="relative w-full aspect-[9/16] bg-gray-900 shadow-2xl overflow-hidden">
-            <img id="preview-image" class="w-full h-full object-contain" src="" alt="Aperçu">
-            
-            <button id="btn-retake" class="absolute top-4 left-4 glass-panel p-3 rounded-full text-white shadow-lg z-20">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-            </button>
-
-            <div class="absolute bottom-6 left-0 w-full px-6 z-20">
-                <div class="glass-panel p-4 rounded-2xl flex flex-col items-center">
-                    <span id="slider-label" class="text-sm font-bold text-club mb-2 uppercase tracking-wide animate-pulse">✨ Glisse pour le mode FUN 🕶️</span>
-                    <input type="range" id="fun-slider" min="0" max="150" value="0">
+            <div class="capture-zone">
+                <div class="cam-btn-wrapper">
+                    <input type="file" id="camera-input" accept="image/*" capture="user">
+                    <div class="cam-btn-visual">
+                        <svg class="cam-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 17.5C14.4853 17.5 16.5 15.4853 16.5 13C16.5 10.5147 14.4853 8.5 12 8.5C9.51472 8.5 7.5 10.5147 7.5 13C7.5 15.4853 9.51472 17.5 12 17.5Z"/>
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M9.73489 4L8.27218 5.75596C7.57077 6.59762 6.51684 7 5.41421 7H5C3.34315 7 2 8.34315 2 10V18C2 19.6569 3.34315 21 5 21H19C20.6569 21 22 19.6569 22 18V10C22 8.34315 20.6569 7 19 7H18.5858C17.4832 7 16.4292 6.59762 15.7278 5.75596L14.2651 4H9.73489ZM12 19.5C15.5899 19.5 18.5 16.5899 18.5 13C18.5 9.41015 15.5899 6.5 12 6.5C8.41015 6.5 5.5 9.41015 5.5 13C5.5 16.5899 8.41015 19.5 12 19.5Z"/>
+                        </svg>
+                        <span class="cam-text">Prendre mon selfie</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="px-5 mt-4 relative z-20">
-            <div class="glass-panel rounded-3xl p-6 shadow-2xl">
-                <div class="text-center mb-5">
-                    <h2 class="text-xl font-bold leading-tight">🔥 Tag <span id="display-ig" class="text-club"></span> en Story !</h2>
-                </div>
-                <button id="btn-share" class="w-full bg-gradient-to-r from-club to-rose-600 text-white font-bold py-4 rounded-2xl mb-3 flex items-center justify-center gap-2 text-lg">
-                    🚀 Partager ma Story Instagram
-                </button>
-                <button id="btn-copy-tags" class="w-full bg-white/5 border border-white/10 text-white font-medium py-3 rounded-xl mb-4 flex items-center justify-center gap-2">
-                    📋 <span id="copy-text">Copier les tags</span>
-                </button>
+        <!-- VUE 2 : PROCESSING -->
+        <div id="view-processing" class="view">
+            <div class="loader-container">
+                <div class="spinner"></div>
+                <p style="color: var(--text-muted); font-weight: 600;">Création de l'image...</p>
             </div>
         </div>
-    </main>
 
-    <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-[-20px] pointer-events-none">
-        ✅ Copié avec succès !
-    </div>
+        <!-- VUE 3 : RESULT HUB -->
+        <div id="view-result" class="view">
+            <div class="preview-container">
+                <img id="final-preview" src="" alt="Aperçu du diplôme">
+            </div>
 
-    <!-- CANVAS CACHÉS (POUR LE RENDU) -->
-    <canvas id="base-photo-canvas" width="1080" height="1920" class="hidden"></canvas>
-    <canvas id="final-render-canvas" width="1080" height="1920" class="hidden"></canvas>
-
-    <script>
-        document.getElementById('display-ig').textContent = window.CONFIG.CLUB_IG;
-
-        let cadreImg = new Image();
-        let lunettesImg = new Image();
-        let currentFaces = [];
-        let aiLoaded = false;
-        let aiLoadingInProgress = false;
-        let faceDetector = null;
-
-        const C_WIDTH = 1080;
-        const C_HEIGHT = 1920;
-        const baseCanvas = document.getElementById('base-photo-canvas');
-        const baseCtx = baseCanvas.getContext('2d', { willReadFrequently: true });
-        const finalCanvas = document.getElementById('final-render-canvas');
-        const finalCtx = finalCanvas.getContext('2d');
-        const previewImage = document.getElementById('preview-image');
-        const sliderLabel = document.getElementById('slider-label');
-
-        lunettesImg.src = window.CONFIG.LUNETTES_URL;
-        cadreImg.crossOrigin = "anonymous";
-        cadreImg.src = window.CONFIG.CADRE_URL;
-
-        // ==========================================
-        // 1. CAPTURE & ANTI-CRASH RAM ABSOLU
-        // ==========================================
-        document.getElementById('file-input').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('screen-capture').classList.add('hidden');
-            document.getElementById('screen-loading').classList.remove('hidden');
-            
-            // On utilise un pointeur mémoire ultra-léger (Évite le crash des 2 secondes)
-            const objectUrl = URL.createObjectURL(file);
-            const img = new Image();
-            
-            img.onload = () => {
-                const imgRatio = img.width / img.height;
-                const canvasRatio = C_WIDTH / C_HEIGHT;
-                let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
-
-                if (imgRatio > canvasRatio) {
-                    drawHeight = C_HEIGHT;
-                    drawWidth = img.height * canvasRatio;
-                    offsetX = (img.width - drawWidth) / 2;
-                } else {
-                    drawWidth = img.width;
-                    drawHeight = img.width / canvasRatio;
-                    offsetY = (img.height - drawHeight) / 2;
-                }
-
-                // Dessin sur Canvas
-                baseCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-                baseCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
+            <div class="actions-hub">
                 
-                // DESTRUCTION IMMÉDIATE : L'image n'est plus en RAM, Safari ne crash plus !
-                URL.revokeObjectURL(objectUrl);
-                img.src = ''; 
+                <button class="btn btn-primary" id="btn-share">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    Partager ma Story
+                </button>
                 
-                updateFinalRender(0); 
+                <div>
+                    <button class="btn btn-secondary" id="btn-download">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Enregistrer dans mes Photos
+                    </button>
+                    <div class="ios-hint">iPhone : Reste appuyé sur l'image pour l'enregistrer.</div>
+                </div>
 
-                document.getElementById('screen-loading').classList.add('hidden');
-                document.getElementById('screen-result').classList.remove('hidden');
-                document.getElementById('fun-slider').value = 0;
-                sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
-            };
-
-            img.onerror = () => { 
-                document.getElementById('loading-text').textContent = "❌ Erreur de lecture.";
-                setTimeout(() => location.reload(), 2000);
-            };
-            
-            img.src = objectUrl;
-        });
-
-        // ==========================================
-        // 2. RENDU
-        // ==========================================
-        function updateFinalRender(funLevel) {
-            finalCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-            finalCtx.drawImage(baseCanvas, 0, 0);
-
-            if (funLevel > 0 && currentFaces.length > 0) {
-                currentFaces.forEach(face => {
-                    if(!face.keypoints || face.keypoints.length < 2) return;
+                <div class="social-block">
+                    <div class="social-title">Viralité Club</div>
                     
-                    const rightEye = face.keypoints[0];
-                    const leftEye = face.keypoints[1];
+                    <button class="btn btn-secondary" id="btn-copy-tags" style="margin-bottom: 12px; padding: 12px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        Copier les tags officiels
+                    </button>
 
-                    const dx = (leftEye.x * C_WIDTH) - (rightEye.x * C_WIDTH);
-                    const dy = (leftEye.y * C_HEIGHT) - (rightEye.y * C_HEIGHT);
-                    const angle = Math.atan2(dy, dx);
-                    const distance = Math.sqrt(dx*dx + dy*dy);
+                    <div class="social-grid">
+                        <a href="instagram://user?username=instagram" target="_blank" class="social-btn insta">
+                            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                            Ouvrir Insta
+                        </a>
+                        <a href="https://www.facebook.com/" target="_blank" class="social-btn fb">
+                            <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V7.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            Page Facebook
+                        </a>
+                    </div>
+                </div>
 
-                    const baseWidth = distance * 2.8; 
-                    const glassesWidth = baseWidth * (1 + (funLevel / 150)); 
-                    const glassesHeight = glassesWidth * (lunettesImg.height / lunettesImg.width);
+                <button class="btn btn-ghost" id="btn-retake">🔄 Reprendre une photo</button>
+            </div>
+        </div>
 
-                    const centerX = (rightEye.x * C_WIDTH + leftEye.x * C_WIDTH) / 2;
-                    const centerY = (rightEye.y * C_HEIGHT + leftEye.y * C_HEIGHT) / 2;
+    </div>
 
-                    finalCtx.save();
-                    finalCtx.translate(centerX, centerY);
-                    finalCtx.rotate(angle);
-                    finalCtx.drawImage(lunettesImg, -glassesWidth/2, -glassesHeight/2, glassesWidth, glassesHeight);
-                    finalCtx.restore();
-                });
-            }
+    <div id="toast" class="toast">Action réussie !</div>
 
-            if (cadreImg.complete && cadreImg.naturalWidth !== 0) {
-                finalCtx.drawImage(cadreImg, 0, 0, C_WIDTH, C_HEIGHT);
-            }
+    <script>
+        /**
+         * Configuration Générale
+         */
+        const CONFIG = {
+            canvasWidth: 1080,
+            canvasHeight: 1920,
+            frameUrl: 'cadre.png', // URL du cadre PNG transparent officiel
+            fileName: 'diplome-hangeki.png',
+            tagsToCopy: '@nomduclub #NomDuClub #WorkoutDone',
+        };
 
-            // JPEG 0.85 pour économiser la mémoire de l'écran affiché
-            previewImage.src = finalCanvas.toDataURL('image/jpeg', 0.85); 
+        // État de l'application
+        let finalImageDataUrl = null;
+        let finalImageBlob = null;
+
+        // Elements du DOM
+        const views = {
+            capture: document.getElementById('view-capture'),
+            processing: document.getElementById('view-processing'),
+            result: document.getElementById('view-result')
+        };
+        const cameraInput = document.getElementById('camera-input');
+        const finalPreview = document.getElementById('final-preview');
+        const toastEl = document.getElementById('toast');
+
+        // Boutons
+        const btnShare = document.getElementById('btn-share');
+        const btnDownload = document.getElementById('btn-download');
+        const btnCopyTags = document.getElementById('btn-copy-tags');
+        const btnRetake = document.getElementById('btn-retake');
+
+        /**
+         * Gestion de l'UI
+         */
+        function switchView(viewName) {
+            Object.values(views).forEach(v => v.classList.remove('active'));
+            views[viewName].classList.add('active');
         }
 
-        // ==========================================
-        // 3. IA : INJECTION INVISIBLE & DYNAMIQUE
-        // ==========================================
-        document.getElementById('fun-slider').addEventListener('input', (e) => {
-            const funLevel = parseInt(e.target.value);
+        function showToast(message, duration = 2500) {
+            toastEl.textContent = message;
+            toastEl.classList.add('show');
+            setTimeout(() => {
+                toastEl.classList.remove('show');
+            }, duration);
+        }
 
-            if (funLevel > 0 && !aiLoaded && !aiLoadingInProgress) {
-                aiLoadingInProgress = true;
-                sliderLabel.textContent = "⏳ Initialisation IA...";
-                
-                // On écoute le signal du script injecté
-                window.addEventListener('mp_ready', async () => {
-                    sliderLabel.textContent = "⏳ Téléchargement modèle (patientez)...";
-                    try {
-                        const vision = await window.MediaPipe.FilesetResolver.forVisionTasks(
-                            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-                        );
-                        sliderLabel.textContent = "⏳ Analyse du visage...";
-                        faceDetector = await window.MediaPipe.FaceDetector.createFromOptions(vision, {
-                            baseOptions: {
-                                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-                                delegate: "CPU"
-                            },
-                            runningMode: "IMAGE"
-                        });
-                        
-                        const detections = faceDetector.detect(baseCanvas);
-                        currentFaces = detections.detections || [];
-                        
-                        if(currentFaces.length === 0) {
-                            sliderLabel.textContent = "⚠️ Aucun visage détecté !";
-                            setTimeout(() => { sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️"; }, 3000);
-                        } else {
-                            sliderLabel.textContent = "😎 Ajuste la taille !";
-                        }
-                        aiLoaded = true;
-                        requestAnimationFrame(() => updateFinalRender(parseInt(document.getElementById('fun-slider').value)));
-                    } catch (err) {
-                        sliderLabel.textContent = "❌ Erreur réseau.";
-                        console.error(err);
-                    }
-                    aiLoadingInProgress = false;
-                }, { once: true });
+        /**
+         * Cœur du Moteur d'Image (Canvas 2D)
+         */
+        cameraInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
 
-                // INJECTION DU SCRIPT : Safari l'autorise à 100% car on crée un vrai bloc <script>
-                const script = document.createElement('script');
-                script.type = 'module';
-                script.innerHTML = `
-                    import { FaceDetector, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js";
-                    window.MediaPipe = { FaceDetector, FilesetResolver };
-                    window.dispatchEvent(new Event('mp_ready'));
-                `;
-                document.head.appendChild(script);
-            }
+            // 1. Basculer sur l'écran de chargement
+            switchView('processing');
 
-            if (aiLoaded || funLevel === 0) {
-                if (funLevel === 0) sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
-                else if (aiLoaded && currentFaces.length > 0) sliderLabel.textContent = "😎 Ajuste la taille !";
-                requestAnimationFrame(() => updateFinalRender(funLevel));
-            }
-        });
-
-        // ==========================================
-        // 4. BOUTONS
-        // ==========================================
-        document.getElementById('btn-retake').addEventListener('click', () => {
-            document.getElementById('file-input').value = '';
-            document.getElementById('screen-result').classList.add('hidden');
-            document.getElementById('screen-capture').classList.remove('hidden');
-        });
-
-        document.getElementById('btn-share').addEventListener('click', async () => {
-            const dataUrl = previewImage.src;
             try {
-                const res = await fetch(dataUrl);
-                const blob = await res.blob();
-                const file = new File([blob], 'workout.jpg', { type: 'image/jpeg' });
+                // 2. Charger la photo utilisateur en mémoire
+                const userImageUrl = URL.createObjectURL(file);
+                const userImage = await loadImage(userImageUrl);
                 
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        title: window.CONFIG.CLUB_NAME,
-                        text: `Fin de séance ! 🔥 ${window.CONFIG.CLUB_IG} ${window.CONFIG.CLUB_TAGS}`,
-                        files: [file]
-                    });
-                } else {
-                    const a = document.createElement('a');
-                    a.href = dataUrl;
-                    a.download = 'workout.jpg';
-                    a.click();
+                // 3. Charger le cadre officiel (avec fallback silencieux si non trouvé pour la résilience)
+                let frameImage = null;
+                try {
+                    frameImage = await loadImage(CONFIG.frameUrl);
+                } catch (e) {
+                    console.warn("Cadre introuvable, génération d'un cadre de secours.");
+                    frameImage = createFallbackFrame();
                 }
-            } catch (err) {}
+
+                // 4. Préparer le Canvas 1080x1920
+                const canvas = document.createElement('canvas');
+                canvas.width = CONFIG.canvasWidth;
+                canvas.height = CONFIG.canvasHeight;
+                const ctx = canvas.getContext('2d');
+
+                // 5. Algorithme Object-Fit: Cover pour la photo utilisateur
+                const imgRatio = userImage.width / userImage.height;
+                const canvasRatio = canvas.width / canvas.height;
+                let drawW, drawH, offsetX, offsetY;
+
+                if (imgRatio > canvasRatio) {
+                    // Image trop large -> on coupe les bords gauche/droite
+                    drawH = canvas.height;
+                    drawW = userImage.width * (canvas.height / userImage.height);
+                    offsetX = (canvas.width - drawW) / 2;
+                    offsetY = 0;
+                } else {
+                    // Image trop haute -> on coupe le haut/bas
+                    drawW = canvas.width;
+                    drawH = userImage.height * (canvas.width / userImage.width);
+                    offsetX = 0;
+                    offsetY = (canvas.height - drawH) / 2;
+                }
+
+                // Peindre la photo utilisateur
+                ctx.drawImage(userImage, offsetX, offsetY, drawW, drawH);
+
+                // 6. Superposer le cadre PNG transparent par dessus
+                ctx.drawImage(frameImage, 0, 0, canvas.width, canvas.height);
+
+                // 7. Exporter le résultat
+                finalImageDataUrl = canvas.toDataURL('image/png'); // Format PNG pour conserver la qualité maximale
+                
+                // Convertir en Blob pour l'API Share native
+                const res = await fetch(finalImageDataUrl);
+                finalImageBlob = await res.blob();
+
+                // 8. Nettoyage mémoire rigoureux
+                URL.revokeObjectURL(userImageUrl);
+                canvas.width = 0;
+                canvas.height = 0;
+
+                // 9. Afficher le résultat
+                finalPreview.src = finalImageDataUrl;
+                
+                // Petit délai pour simuler le chargement et laisser le DOM se rafraîchir
+                setTimeout(() => {
+                    switchView('result');
+                }, 300);
+
+            } catch (error) {
+                console.error("Erreur de traitement :", error);
+                alert("Une erreur s'est produite lors du traitement de l'image.");
+                switchView('capture');
+            }
+            
+            // Réinitialiser l'input pour permettre de reprendre la même photo
+            cameraInput.value = '';
         });
 
-        document.getElementById('btn-copy-tags').addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(`${window.CONFIG.CLUB_IG} ${window.CONFIG.CLUB_TAGS}`);
-                const toast = document.getElementById('toast');
-                toast.classList.remove('opacity-0', 'translate-y-[-20px]');
-                setTimeout(() => toast.classList.add('opacity-0', 'translate-y-[-20px]'), 2000);
-            } catch (err) {}
+        // Fonction utilitaire pour charger une image proprement via Promise
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = src;
+            });
+        }
+
+        /**
+         * Actions du Hub Post-Capture
+         */
+
+        // Action 1: Partager (Web Share API - Native iOS/Android)
+        btnShare.addEventListener('click', async () => {
+            if (!finalImageBlob) return;
+
+            const fileToShare = new File([finalImageBlob], CONFIG.fileName, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [fileToShare] })) {
+                try {
+                    await navigator.share({
+                        files: [fileToShare],
+                        title: 'Workout Done',
+                        text: CONFIG.tagsToCopy
+                    });
+                    // Le partage natif s'est ouvert avec succès.
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error('Erreur de partage:', error);
+                        showToast("Le partage natif a échoué.");
+                    }
+                }
+            } else {
+                // Fallback si l'API de partage de fichiers n'est pas supportée
+                showToast("Partage natif non supporté sur ce navigateur. Utilisez le bouton Enregistrer.", 4000);
+            }
         });
+
+        // Action 2: Enregistrer / Télécharger
+        btnDownload.addEventListener('click', () => {
+            if (!finalImageDataUrl) return;
+            
+            const a = document.createElement('a');
+            a.href = finalImageDataUrl;
+            a.download = CONFIG.fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            showToast("Téléchargement lancé !");
+        });
+
+        // Action 3: Copier les tags dans le presse-papiers
+        btnCopyTags.addEventListener('click', async () => {
+            try {
+                // Tentative avec l'API moderne
+                await navigator.clipboard.writeText(CONFIG.tagsToCopy);
+                triggerCopySuccess();
+            } catch (err) {
+                // Fallback ancienne méthode (document.execCommand) pour compatibilité maximale iFrame/vieux iOS
+                const textArea = document.createElement("textarea");
+                textArea.value = CONFIG.tagsToCopy;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    triggerCopySuccess();
+                } catch (e) {
+                    showToast("Erreur lors de la copie.");
+                }
+                textArea.remove();
+            }
+        });
+
+        function triggerCopySuccess() {
+            const originalHTML = btnCopyTags.innerHTML;
+            btnCopyTags.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span style="color: #4ade80">Copié avec succès !</span>
+            `;
+            showToast("Tags copiés dans le presse-papiers !");
+            
+            setTimeout(() => {
+                btnCopyTags.innerHTML = originalHTML;
+            }, 3000);
+        }
+
+        // Action 4: Recommencer
+        btnRetake.addEventListener('click', () => {
+            finalImageDataUrl = null;
+            finalImageBlob = null;
+            finalPreview.src = '';
+            switchView('capture');
+        });
+
+        /**
+         * Utilitaire: Fallback si le cadre officiel ('cadre.png') n'est pas présent sur le serveur
+         * Génère un cadre dynamique esthétique pour éviter que l'app plante.
+         */
+        function createFallbackFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = CONFIG.canvasWidth;
+            canvas.height = CONFIG.canvasHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Bordure
+            ctx.lineWidth = 40;
+            ctx.strokeStyle = '#FF3366';
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+            // Bandeau en bas
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, canvas.height - 250, canvas.width, 250);
+
+            // Texte de secours
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 80px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('WORKOUT DONE', canvas.width / 2, canvas.height - 120);
+            
+            ctx.fillStyle = '#FF3366';
+            ctx.font = 'bold 40px sans-serif';
+            ctx.fillText(CONFIG.tagsToCopy, canvas.width / 2, canvas.height - 60);
+
+            const img = new Image();
+            img.src = canvas.toDataURL('image/png');
+            return img;
+        }
+
     </script>
 </body>
 </html>
