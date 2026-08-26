@@ -314,17 +314,16 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             showLoading("Activation du mode FUN... 🕶️");
             
             try {
-                // IMPORT DYNAMIQUE : Le code Google n'est téléchargé que MAINTENANT.
-                const { FaceDetector, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/vision_bundle.js");
+                // IMPORT DYNAMIQUE : On utilise unpkg (mieux toléré par Safari iOS)
+                const { FaceDetector, FilesetResolver } = await import("https://unpkg.com/@mediapipe/tasks-vision@0.10.3/vision_bundle.js");
                 
                 const vision = await FilesetResolver.forVisionTasks(
-                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                    "https://unpkg.com/@mediapipe/tasks-vision@0.10.3/wasm"
                 );
                 
                 faceDetector = await FaceDetector.createFromOptions(vision, {
                     baseOptions: {
                         modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
-                        delegate: "CPU"
                     },
                     runningMode: "IMAGE"
                 });
@@ -332,7 +331,16 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 isAIReady = true;
                 loadingText.textContent = "Recherche des visages...";
                 
-                const detections = faceDetector.detect(originalImage);
+                // ASTUCE iOS : Safari déteste analyser des images "en mémoire".
+                // On copie l'image sur un Canvas invisible pour que l'IA la lise en toute sécurité.
+                const aiCanvas = document.createElement('canvas');
+                aiCanvas.width = originalImage.width;
+                aiCanvas.height = originalImage.height;
+                const aiCtx = aiCanvas.getContext('2d');
+                aiCtx.drawImage(originalImage, 0, 0);
+                
+                // L'IA analyse le canvas (100% stable)
+                const detections = faceDetector.detect(aiCanvas);
                 currentFaces = detections.detections || [];
                 
                 hideLoading();
@@ -340,7 +348,8 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
                 return true;
             } catch (error) {
                 console.error("Erreur IA:", error);
-                alert("Connexion trop faible pour charger les lunettes intelligentes.");
+                // Affichage de l'erreur brute pour comprendre ce qui bloque si ça arrive encore
+                alert("Erreur Safari : " + (error.message || "Blocage réseau interne de l'iPhone."));
                 hideLoading();
                 isDetecting = false;
                 funSlider.value = 0;
