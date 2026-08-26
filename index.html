@@ -156,44 +156,61 @@ Toute reproduction, modification, distribution ou rétro-ingénierie non autoris
             document.getElementById('screen-capture').classList.add('hidden');
             document.getElementById('screen-loading').classList.remove('hidden');
             
-            // On laisse 800 millisecondes à l'iPhone pour libérer la RAM de l'appareil photo
-            setTimeout(() => {
-                const url = URL.createObjectURL(file);
-                const img = new Image();
+            // NOUVEAU : On lit et sauvegarde la photo IMMÉDIATEMENT avant que l'iPhone ne la supprime.
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                const imageData = event.target.result;
                 
-                img.onload = () => {
-                    // Recadrage cover 9:16
-                    const imgRatio = img.width / img.height;
-                    const canvasRatio = C_WIDTH / C_HEIGHT;
-                    let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
-
-                    if (imgRatio > canvasRatio) {
-                        drawHeight = C_HEIGHT;
-                        drawWidth = img.height * canvasRatio;
-                        offsetX = (img.width - drawWidth) / 2;
-                    } else {
-                        drawWidth = img.width;
-                        drawHeight = img.width / canvasRatio;
-                        offsetY = (img.height - drawHeight) / 2;
-                    }
-
-                    // Dessin sur Canvas et destruction IMMÉDIATE de la photo source de la RAM
-                    baseCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
-                    baseCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
-                    URL.revokeObjectURL(url);
-                    img.src = ''; 
+                // On laisse 800 millisecondes à l'iPhone pour libérer la RAM de l'appareil photo
+                setTimeout(() => {
+                    const img = new Image();
                     
-                    updateFinalRender(0); // Rendu de base (cadre + photo, sans lunettes)
+                    img.onload = () => {
+                        // Recadrage cover 9:16
+                        const imgRatio = img.width / img.height;
+                        const canvasRatio = C_WIDTH / C_HEIGHT;
+                        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
 
-                    document.getElementById('screen-loading').classList.add('hidden');
-                    document.getElementById('screen-result').classList.remove('hidden');
-                    document.getElementById('fun-slider').value = 0;
-                    sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
-                };
+                        if (imgRatio > canvasRatio) {
+                            drawHeight = C_HEIGHT;
+                            drawWidth = img.height * canvasRatio;
+                            offsetX = (img.width - drawWidth) / 2;
+                        } else {
+                            drawWidth = img.width;
+                            drawHeight = img.width / canvasRatio;
+                            offsetY = (img.height - drawHeight) / 2;
+                        }
 
-                img.onerror = () => { alert("Erreur de lecture de l'image."); location.reload(); };
-                img.src = url;
-            }, 800); // <-- Ce délai est LA clé pour ne pas retourner à l'accueil
+                        // Dessin sur Canvas et destruction IMMÉDIATE de la photo source de la RAM
+                        baseCtx.clearRect(0, 0, C_WIDTH, C_HEIGHT);
+                        baseCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight, 0, 0, C_WIDTH, C_HEIGHT);
+                        img.src = ''; // Libération mémoire 
+                        
+                        updateFinalRender(0); // Rendu de base (cadre + photo, sans lunettes)
+
+                        document.getElementById('screen-loading').classList.add('hidden');
+                        document.getElementById('screen-result').classList.remove('hidden');
+                        document.getElementById('fun-slider').value = 0;
+                        sliderLabel.textContent = "✨ Glisse pour le mode FUN 🕶️";
+                    };
+
+                    img.onerror = () => { 
+                        document.getElementById('loading-text').textContent = "❌ Erreur de lecture.";
+                        setTimeout(() => location.reload(), 2000);
+                    };
+                    
+                    img.src = imageData;
+                }, 800); // <-- Ce délai est LA clé pour ne pas retourner à l'accueil
+            };
+
+            reader.onerror = () => {
+                document.getElementById('loading-text').textContent = "❌ Fichier illisible.";
+                setTimeout(() => location.reload(), 2000);
+            };
+
+            // Lancement immédiat de la lecture
+            reader.readAsDataURL(file);
         });
 
         // ==========================================
